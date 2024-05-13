@@ -31,10 +31,11 @@ class ThemeConfig {
         ),
       ).titleLarge,
     ),
-    colorScheme: ColorScheme.fromSwatch().copyWith(
+    colorScheme: ColorScheme.light(
+      primary: lightAccent,
       secondary: lightAccent,
       background: lightBG,
-      brightness: Brightness.light,
+      onBackground: darkBG, // Adjust text color for dark background
     ),
   );
 
@@ -60,10 +61,11 @@ class ThemeConfig {
         ),
       ).titleLarge,
     ),
-    colorScheme: ColorScheme.fromSwatch().copyWith(
+    colorScheme: ColorScheme.dark(
+      primary: darkAccent,
       secondary: darkAccent,
       background: darkBG,
-      brightness: Brightness.dark,
+      onBackground: lightBG, // Adjust text color for light background
     ),
   );
 }
