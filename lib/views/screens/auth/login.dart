@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:social_app_ui/util/animations.dart';
 import 'package:social_app_ui/util/const.dart';
 import 'package:social_app_ui/util/enum.dart';
@@ -19,36 +20,51 @@ class _LoginState extends State<Login> {
   bool loading = false;
   bool validate = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String email = '', password = '', name = '';
   FocusNode nameFN = FocusNode();
   FocusNode emailFN = FocusNode();
   FocusNode passFN = FocusNode();
   FormMode formMode = FormMode.LOGIN;
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   login() async {
     FormState form = formKey.currentState!;
+    if (form.validate()) {
     form.save();
+      setState(() {
+        loading = true;
+      });
+      try {
+        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
     Navigate.pushPageReplacement(context, MainScreen());
-    // if (!form.validate()) {
-    //   validate = true;
-    //   setState(() {});
-    //   showInSnackBar('Please fix the errors in red before submitting.');
-    // } else {
-    //   Navigate.pushPageReplacement(context, MainScreen());
-    // }
+      } on FirebaseAuthException catch (e) {
+        showInSnackBar(e.message ?? 'Login failed');
+      } finally {
+        setState(() {
+          loading = false;
+        });
+      }
+    } else {
+      setState(() {
+        validate = true;
+      });
+      showInSnackBar('Please fix the errors in red before submitting.');
+    }
   }
 
   void showInSnackBar(String value) {
-    // _scaffoldKey.currentState?.removeCurrentSnackBar();
-    // _scaffoldKey.currentState?.showSnackBar(SnackBar(content: Text(value)));
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      key: _scaffoldKey,
       body: Container(
         child: Row(
           children: [
