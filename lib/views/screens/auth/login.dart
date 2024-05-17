@@ -10,6 +10,7 @@ import 'package:HolaTalk/views/screens/main_screen.dart';
 import 'package:HolaTalk/views/widgets/custom_button.dart';
 import 'package:HolaTalk/views/widgets/custom_text_field.dart';
 import 'package:HolaTalk/util/extensions.dart';
+import 'package:HolaTalk/util/country_data.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -20,7 +21,7 @@ class _LoginState extends State<Login> {
   bool loading = false;
   bool validate = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  String email = '', password = '', name = '', id = '';
+  String email = '', password = '', name = '', id = '', country = '';
   FocusNode idFN = FocusNode();
   FocusNode nameFN = FocusNode();
   FocusNode emailFN = FocusNode();
@@ -208,6 +209,39 @@ class _LoginState extends State<Login> {
                 },
                 focusNode: nameFN,
                 nextFocusNode: emailFN,
+              ),
+              SizedBox(height: 20.0),
+              InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Country',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: country.isEmpty ? null : country,
+                    isDense: true,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        country = newValue!;
+                      });
+                    },
+                    items: countries.map((Country country) {
+                      return DropdownMenuItem<String>(
+                        value: country.name,
+                        child: Row(
+                          children: <Widget>[
+                            Text(country.flag),
+                            SizedBox(width: 10),
+                            Text(country.name),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
               SizedBox(height: 20.0),
             ],
