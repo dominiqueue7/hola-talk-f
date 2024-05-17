@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:HolaTalk/views/screens/auth/login.dart';
 
 class Account extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -36,30 +37,85 @@ class Account extends StatelessWidget {
             title: Text('Sign out'),
             onTap: () async {
               await _auth.signOut();
-              Navigator.of(context).popUntil((route) => route.isFirst);
-              // 로그인 화면으로 이동하는 코드 추가
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => Login()), 
+                (Route<dynamic> route) => false,
+              );
             },
           ),
           ListTile(
             leading: Icon(Icons.delete),
             title: Text('Delete account'),
             onTap: () async {
-              try {
-                await user?.delete();
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                // 로그인 화면으로 이동하는 코드 추가
-              } catch (e) {
-                // 에러 처리
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to delete account: $e'),
-                  ),
-                );
-              }
+              _showDeleteAccountDialog(context, user);
             },
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showDeleteAccountDialog(BuildContext context, User? user) async {
+    TextEditingController emailController = TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // 다이얼로그 외부 클릭 시 닫히지 않도록 설정
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Account'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to delete your account? This action cannot be undone.'),
+                SizedBox(height: 20),
+                Text('Please enter your email to confirm:'),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'Enter your email address',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () async {
+                if (user?.email == emailController.text.trim()) {
+                  try {
+                    await user?.delete();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => Login()), 
+                      (Route<dynamic> route) => false,
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete account: $e'),
+                      ),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Email does not match. Please try again.'),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
