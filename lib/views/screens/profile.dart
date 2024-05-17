@@ -29,7 +29,8 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 10),
         child: Container(
           width: MediaQuery.of(context).size.width,
@@ -124,6 +125,7 @@ class _ProfileState extends State<Profile> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
