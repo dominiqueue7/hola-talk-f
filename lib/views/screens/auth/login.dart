@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:HolaTalk/util/animations.dart';
 import 'package:HolaTalk/util/const.dart';
 import 'package:HolaTalk/util/enum.dart';
@@ -211,37 +212,36 @@ class _LoginState extends State<Login> {
                 nextFocusNode: emailFN,
               ),
               SizedBox(height: 20.0),
-              InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Country',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(),
+              TypeAheadFormField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  decoration: InputDecoration(
+                    labelText: 'Country',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide(),
+                    ),
                   ),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: country.isEmpty ? null : country,
-                    isDense: true,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        country = newValue!;
-                      });
-                    },
-                    items: countries.map((Country country) {
-                      return DropdownMenuItem<String>(
-                        value: country.name,
-                        child: Row(
-                          children: <Widget>[
-                            Text(country.flag),
-                            SizedBox(width: 10),
-                            Text(country.name),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                suggestionsCallback: (pattern) {
+                  return countries.where((country) =>
+                      country.name.toLowerCase().contains(pattern.toLowerCase()));
+                },
+                itemBuilder: (context, Country suggestion) {
+                  return ListTile(
+                    leading: Text(suggestion.flag),
+                    title: Text(suggestion.name),
+                  );
+                },
+                onSuggestionSelected: (Country suggestion) {
+                  setState(() {
+                    country = suggestion.name;
+                  });
+                },
+                validator: (value) =>
+                    value!.isEmpty ? 'Please select a country' : null,
+                onSaved: (value) {
+                  country = value ?? '';
+                },
               ),
               SizedBox(height: 20.0),
             ],
