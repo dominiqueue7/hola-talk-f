@@ -228,7 +228,10 @@ class _LoginState extends State<Login> {
                 },
                 itemBuilder: (context, Country suggestion) {
                   return ListTile(
-                    leading: Text(suggestion.flag),
+                    leading: Text(
+                      suggestion.flag,
+                      style: TextStyle(fontSize: 24), // Adjust font size as needed
+                    ),
                     title: Text(suggestion.name),
                   );
                 },
