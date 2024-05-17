@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:HolaTalk/util/animations.dart';
 import 'package:HolaTalk/util/const.dart';
@@ -30,6 +31,7 @@ class _LoginState extends State<Login> {
   FormMode formMode = FormMode.LOGIN;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   login() async {
     FormState form = formKey.currentState!;
@@ -43,9 +45,68 @@ class _LoginState extends State<Login> {
           email: email,
           password: password,
         );
+
+        // Firestore에 마지막 로그인 날짜 기록
+        await _firestore.collection('users').doc(userCredential.user?.uid).update({
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+
         Navigate.pushPageReplacement(context, MainScreen());
       } on FirebaseAuthException catch (e) {
         showInSnackBar(e.message ?? 'Login failed');
+      } finally {
+        setState(() {
+          loading = false;
+        });
+      }
+    } else {
+      setState(() {
+        validate = true;
+      });
+      showInSnackBar('Please fix the errors in red before submitting.');
+    }
+  }
+
+  signUp() async {
+    FormState form = formKey.currentState!;
+    if (form.validate()) {
+      form.save();
+      setState(() {
+        loading = true;
+      });
+
+      String? emailCheck = await Validations.checkEmailInUse(email);
+      if (emailCheck != null) {
+        showInSnackBar(emailCheck);
+        setState(() {
+          loading = false;
+        });
+        return;
+      }
+
+      try {
+        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        // Firestore에 사용자 정보 저장
+        await _firestore.collection('users').doc(userCredential.user?.uid).set({
+          'id': id,
+          'name': name,
+          'email': email,
+          'country': country,
+          'signUpDate': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+
+        Navigate.pushPageReplacement(context, MainScreen());
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          showInSnackBar('This email is already in use.');
+        } else {
+          showInSnackBar(e.message ?? 'Registration failed');
+        }
       } finally {
         setState(() {
           loading = false;
@@ -214,6 +275,7 @@ class _LoginState extends State<Login> {
               SizedBox(height: 20.0),
               TypeAheadFormField(
                 textFieldConfiguration: TextFieldConfiguration(
+                  controller: TextEditingController(text: country),
                   decoration: InputDecoration(
                     labelText: 'Country',
                     border: OutlineInputBorder(
@@ -271,7 +333,7 @@ class _LoginState extends State<Login> {
                 hintText: "Password",
                 textInputAction: TextInputAction.done,
                 validateFunction: Validations.validatePassword,
-                submitAction: login,
+                submitAction: formMode == FormMode.LOGIN ? login : signUp,
                 obscureText: true,
                 onSaved: (String? val) {
                   password = val ?? '';
@@ -289,8 +351,8 @@ class _LoginState extends State<Login> {
     return loading
         ? Center(child: CircularProgressIndicator())
         : CustomButton(
-            label: "Submit",
-            onPressed: () => login(),
+            label: formMode == FormMode.LOGIN ? "Login" : "Register",
+            onPressed: formMode == FormMode.LOGIN ? login : signUp,
           ).fadeInList(4, false);
   }
 }
