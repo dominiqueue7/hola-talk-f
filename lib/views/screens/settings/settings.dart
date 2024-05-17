@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_app_ui/views/screens/settings/account.dart';
 
 class Settings extends StatelessWidget {
   @override
@@ -13,7 +14,10 @@ class Settings extends StatelessWidget {
             leading: Icon(Icons.account_circle),
             title: Text('Account'),
             onTap: () {
-              // Account 설정 화면으로 이동하는 코드 추가
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Account()),
+              );
             },
           ),
           ListTile(
