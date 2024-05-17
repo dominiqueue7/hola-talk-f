@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:social_app_ui/util/data.dart';
+import 'package:social_app_ui/views/screens/settings/settings.dart'; // Settings 화면을 불러옵니다.
 
 class Profile extends StatefulWidget {
   @override
@@ -20,7 +21,10 @@ class _ProfileState extends State<Profile> {
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
-              // Handle settings button press
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Settings()),
+              );
             },
           ),
         ],
