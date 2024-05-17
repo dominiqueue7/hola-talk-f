@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:social_app_ui/util/data.dart';
-import 'package:social_app_ui/views/screens/settings/settings.dart'; // Settings 화면을 불러옵니다.
+import 'package:social_app_ui/views/screens/settings/settings.dart'; 
 
 class Profile extends StatefulWidget {
   @override
