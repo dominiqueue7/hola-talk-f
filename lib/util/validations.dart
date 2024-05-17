@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 class Validations {
   static String? validateName(String? value) {
     if (value == null || value.isEmpty) return 'Name is Required.';
@@ -29,4 +31,17 @@ class Validations {
     if (!idExp.hasMatch(value)) return 'Please enter only alphanumeric characters.';
     return null;
   }
+
+  static Future<String?> checkEmailInUse(String email) async {
+    try {
+      final list = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      if (list.isNotEmpty) {
+        return 'This email is already in use.';
+      }
+    } catch (e) {
+      return 'Error occurred while checking email.';
+    }
+    return null;
+  }
+
 }
