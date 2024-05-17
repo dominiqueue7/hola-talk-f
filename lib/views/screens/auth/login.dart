@@ -20,7 +20,8 @@ class _LoginState extends State<Login> {
   bool loading = false;
   bool validate = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  String email = '', password = '', name = '';
+  String email = '', password = '', name = '', id = '';
+  FocusNode idFN = FocusNode();
   FocusNode nameFN = FocusNode();
   FocusNode emailFN = FocusNode();
   FocusNode passFN = FocusNode();
@@ -31,7 +32,7 @@ class _LoginState extends State<Login> {
   login() async {
     FormState form = formKey.currentState!;
     if (form.validate()) {
-    form.save();
+      form.save();
       setState(() {
         loading = true;
       });
@@ -40,7 +41,7 @@ class _LoginState extends State<Login> {
           email: email,
           password: password,
         );
-    Navigate.pushPageReplacement(context, MainScreen());
+        Navigate.pushPageReplacement(context, MainScreen());
       } on FirebaseAuthException catch (e) {
         showInSnackBar(e.message ?? 'Login failed');
       } finally {
@@ -74,8 +75,7 @@ class _LoginState extends State<Login> {
                 duration: Duration(milliseconds: 500),
                 child: Center(
                   child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
                     child: buildFormContainer(),
                   ),
                 ),
@@ -186,6 +186,18 @@ class _LoginState extends State<Login> {
           visible: formMode == FormMode.REGISTER,
           child: Column(
             children: [
+              CustomTextField(
+                enabled: !loading,
+                hintText: "ID",
+                textInputAction: TextInputAction.next,
+                validateFunction: Validations.validateId,
+                onSaved: (String? val) {
+                  id = val ?? '';
+                },
+                focusNode: idFN,
+                nextFocusNode: nameFN,
+              ),
+              SizedBox(height: 20.0),
               CustomTextField(
                 enabled: !loading,
                 hintText: "Name",

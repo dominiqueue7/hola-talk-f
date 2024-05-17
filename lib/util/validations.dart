@@ -22,4 +22,11 @@ class Validations {
       return 'Please enter a valid password.';
     return null;
   }
+
+  static String? validateId(String? value) {
+    if (value == null || value.isEmpty) return 'ID is Required.';
+    final RegExp idExp = RegExp(r'^[A-Za-z0-9]+$');
+    if (!idExp.hasMatch(value)) return 'Please enter only alphanumeric characters.';
+    return null;
+  }
 }
