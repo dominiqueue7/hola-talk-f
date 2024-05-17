@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:social_app_ui/util/data.dart';
-import 'package:social_app_ui/views/screens/settings/settings.dart'; 
+import 'package:HolaTalk/util/data.dart';
+import 'package:HolaTalk/views/screens/settings/settings.dart'; 
 
 class Profile extends StatefulWidget {
   @override

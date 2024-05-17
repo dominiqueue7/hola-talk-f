@@ -1,4 +1,4 @@
-package com.example.social_app_ui
+package com.example.HolaTalk
 
 import io.flutter.embedding.android.FlutterActivity
 

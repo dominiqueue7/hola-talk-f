@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:social_app_ui/views/screens/settings/account.dart';
+import 'package:HolaTalk/views/screens/settings/account.dart';
 
 class Settings extends StatelessWidget {
   @override

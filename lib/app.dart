@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:social_app_ui/util/const.dart';
-import 'package:social_app_ui/util/theme_config.dart';
-import 'package:social_app_ui/views/screens/auth/login.dart';
+import 'package:HolaTalk/util/const.dart';
+import 'package:HolaTalk/util/theme_config.dart';
+import 'package:HolaTalk/views/screens/auth/login.dart';
 
 class MyApp extends StatelessWidget {
   @override

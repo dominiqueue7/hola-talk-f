@@ -1,3 +1,3 @@
-# social_app_ui
+# HolaTalk
 
 A new Flutter project.

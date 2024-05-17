@@ -1,6 +1,6 @@
 {
-    "name": "social_app_ui",
-    "short_name": "social_app_ui",
+    "name": "HolaTalk",
+    "short_name": "HolaTalk",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
