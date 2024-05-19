@@ -386,8 +386,36 @@ class _LoginState extends State<Login> {
     return loading
         ? Center(child: CircularProgressIndicator())
         : CustomButton(
-            label: formMode == FormMode.LOGIN ? "Login" : "Register",
-            onPressed: formMode == FormMode.LOGIN ? login : signUp,
+            label: formMode == FormMode.LOGIN ? "Login" : formMode == FormMode.REGISTER ? "Register" : "Confirm",
+            onPressed: formMode == FormMode.LOGIN ? login : formMode == FormMode.REGISTER ? signUp : _sendPasswordResetEmail,
           ).fadeInList(4, false);
+  }
+
+  _sendPasswordResetEmail() async {
+    FormState form = formKey.currentState!;
+    if (form.validate()) {
+      form.save();
+      setState(() {
+        loading = true;
+      });
+      try {
+        await _auth.sendPasswordResetEmail(email: email);
+        showInSnackBar('Password reset email sent. Please check your email.');
+        setState(() {
+          formMode = FormMode.LOGIN;
+        });
+      } on FirebaseAuthException catch (e) {
+        showInSnackBar(e.message ?? 'Failed to send password reset email');
+      } finally {
+        setState(() {
+          loading = false;
+        });
+      }
+    } else {
+      setState(() {
+        validate = true;
+      });
+      showInSnackBar('Please fix the errors in red before submitting.');
+    }
   }
 }
