@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 
 class Account extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +109,17 @@ class Account extends StatelessWidget {
               onPressed: () async {
                 if (user?.email == emailController.text.trim()) {
                   try {
+                    // Firebase Storage에서 사용자 프로필 이미지 삭제 시도
+                    try {
+                      await _storage.ref('user_profile/${user?.uid}.heic').delete();
+                    } catch (e) {
+                      if (e is FirebaseException && e.code == 'object-not-found') {
+                        // 파일이 존재하지 않는 경우 무시
+                      } else {
+                        rethrow; // 다른 예외는 재던지기
+                      }
+                    }
+
                     // Firestore에서 사용자 문서 삭제
                     await _firestore.collection('users').doc(user?.uid).delete();
 
