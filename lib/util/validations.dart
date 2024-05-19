@@ -36,5 +36,4 @@ class Validations {
     }
     return null;
   }
-
 }

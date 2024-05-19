@@ -168,24 +168,29 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      body: Container(
-        child: Row(
-          children: [
-            buildLottieContainer(),
-            Expanded(
-              child: SingleChildScrollView( // 스크롤 가능하게 만드는 위젯 추가
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-                      child: buildFormContainer(),
+      body: GestureDetector( // GestureDetector 추가
+        onTap: () {
+          FocusScope.of(context).unfocus(); // 화면 바깥을 터치하면 키보드 내리기
+        },
+        child: Container(
+          child: Row(
+            children: [
+              buildLottieContainer(),
+              Expanded(
+                child: SingleChildScrollView( // 스크롤 가능하게 만드는 위젯 추가
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+                        child: buildFormContainer(),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
