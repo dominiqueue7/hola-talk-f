@@ -3,9 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 class Validations {
   static String? validateName(String? value) {
     if (value == null || value.isEmpty) return 'Name is Required.';
-    final RegExp nameExp = new RegExp(r'^[A-za-zğüşöçİĞÜŞÖÇ ]+$');
+    // 모든 유니코드 문자를 허용하는 정규식
+    final RegExp nameExp = new RegExp(r'^[\p{L} ]+$', unicode: true);
     if (!nameExp.hasMatch(value))
-      return 'Please enter only alphabetical characters.';
+      return 'Please enter a valid name.';
     return null;
   }
 
