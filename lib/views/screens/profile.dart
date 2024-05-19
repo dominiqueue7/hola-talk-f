@@ -1,6 +1,13 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:HolaTalk/util/data.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart'; 
 
@@ -11,6 +18,49 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   static Random random = Random();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+      File? compressedImage = await _compressImage(imageFile);
+
+      if (compressedImage != null) {
+        User? user = _auth.currentUser;
+        try {
+          await _uploadImage(compressedImage, user?.uid);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+        }
+      }
+    }
+  }
+
+  Future<File?> _compressImage(File file) async {
+    final dir = await getTemporaryDirectory();
+    final targetPath = path.join(dir.absolute.path, "${path.basenameWithoutExtension(file.path)}.heic");
+
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: 80,
+      format: CompressFormat.heic,
+    );
+
+    return result != null ? File(result.path) : null;
+  }
+
+  Future<void> _uploadImage(File file, String? uid) async {
+    if (uid != null) {
+      final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
+      await storageRef.putFile(file);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +102,7 @@ class _ProfileState extends State<Profile> {
                       right: 0,
                       child: GestureDetector(
                         onTap: () {
-                          // 편집 아이콘 클릭 시 동작 추가
+                          _pickAndUploadImage();
                         },
                         child: Container(
                           height: 30,
