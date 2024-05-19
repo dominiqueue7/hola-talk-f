@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 
 class Account extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +94,12 @@ class Account extends StatelessWidget {
               onPressed: () async {
                 if (user?.email == emailController.text.trim()) {
                   try {
+                    // Firestore에서 사용자 문서 삭제
+                    await _firestore.collection('users').doc(user?.uid).delete();
+
+                    // Firebase Authentication에서 사용자 삭제
                     await user?.delete();
+
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (context) => Login()), 
                       (Route<dynamic> route) => false,
