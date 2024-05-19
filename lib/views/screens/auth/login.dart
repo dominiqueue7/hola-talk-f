@@ -305,6 +305,7 @@ class _LoginState extends State<Login> {
                 },
                 focusNode: nameFN,
                 nextFocusNode: emailFN,
+                maxLength: 30,
               ),
               SizedBox(height: 20.0),
               TypeAheadFormField(
