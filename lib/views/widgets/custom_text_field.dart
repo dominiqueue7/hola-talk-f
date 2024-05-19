@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final FormFieldValidator<String>? validateFunction;
   final void Function(String?)? onSaved, onChange;
+  final int? maxLength;
 
   CustomTextField({
     this.initialValue,
@@ -27,6 +28,7 @@ class CustomTextField extends StatelessWidget {
     this.validateFunction,
     this.onSaved,
     this.onChange,
+    this.maxLength, // 추가된 속성
     super.key,
   });
 
@@ -57,6 +59,7 @@ class CustomTextField extends StatelessWidget {
             submitAction!();
           }
         },
+        maxLength: maxLength, // maxLength 속성 추가
         decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
