@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/views/widgets/post_item.dart';
-import 'package:HolaTalk/util/data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
+import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다. 
 
 class Home extends StatefulWidget {
   @override
@@ -24,16 +25,26 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        itemCount: posts.length,
-        itemBuilder: (BuildContext context, int index) {
-          Map post = posts[index];
-          return PostItem(
-            img: post['img'],
-            name: post['name'],
-            dp: post['dp'],
-            time: post['time'],
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('moments').orderBy('createdAt', descending: true).snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          return ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (BuildContext context, int index) {
+              var post = snapshot.data!.docs[index];
+              return PostItem(
+                userId: post['userId'],
+                name: post['userName'],
+                time: (post['createdAt'] as Timestamp).toDate().toString(),
+                img: post['imageUrl'] ?? '',
+                content: post['content'],
+              );
+            },
           );
         },
       ),
