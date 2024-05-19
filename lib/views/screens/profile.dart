@@ -23,6 +23,23 @@ class _ProfileState extends State<Profile> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? _profileImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      String? imageUrl = await _getProfileImageUrl(user.uid);
+      setState(() {
+        _profileImageUrl = imageUrl;
+      });
+    }
+  }
 
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
@@ -37,6 +54,7 @@ class _ProfileState extends State<Profile> {
         try {
           await _uploadImage(compressedImage, user?.uid);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
+          _loadProfileImage();  // 프로필 이미지 URL을 다시 불러옵니다.
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
         }
@@ -65,17 +83,14 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  Future<String?> _getProfileImageUrl(String? uid) async {
-    if (uid != null) {
-      try {
-        final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
-        return await storageRef.getDownloadURL();
-      } catch (e) {
-        print('Failed to get profile image URL: $e');
-        return null;
-      }
+  Future<String?> _getProfileImageUrl(String uid) async {
+    try {
+      final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      print('Failed to get profile image URL: $e');
+      return null;
     }
-    return null;
   }
 
   Future<String?> _getUserName(String? uid) async {
@@ -122,36 +137,28 @@ class _ProfileState extends State<Profile> {
                 SizedBox(height: 60),
                 Stack(
                   children: [
-                    FutureBuilder<String?>(
-                      future: _getProfileImageUrl(user?.uid),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.grey[200],
-                            child: Icon(
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey[200],
+                      child: _profileImageUrl == null
+                          ? Icon(
                               Icons.person,
                               size: 50,
                               color: Colors.grey,
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: _profileImageUrl!,
+                              imageBuilder: (context, imageProvider) => CircleAvatar(
+                                radius: 50,
+                                backgroundImage: imageProvider,
+                              ),
+                              placeholder: (context, url) => CircularProgressIndicator(),
+                              errorWidget: (context, url, error) => Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
                             ),
-                          );
-                        } else if (snapshot.hasError || !snapshot.hasData) {
-                          return CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.grey[200],
-                            child: Icon(
-                              Icons.person,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
-                          );
-                        } else {
-                          return CircleAvatar(
-                            radius: 50,
-                            backgroundImage: CachedNetworkImageProvider(snapshot.data!),
-                          );
-                        }
-                      },
                     ),
                     Positioned(
                       bottom: 0,
