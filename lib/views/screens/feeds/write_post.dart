@@ -20,6 +20,8 @@ class _WritePostPageState extends State<WritePostPage> {
   bool validate = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   String content = '';
+  String? userName;
+  String? userCountry;
   FocusNode contentFN = FocusNode();
   File? _imageFile;
 
@@ -28,6 +30,23 @@ class _WritePostPageState extends State<WritePostPage> {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+      setState(() {
+        userName = userDoc['name'];
+        userCountry = userDoc['country'];
+      });
+    }
+  }
 
   Future<void> pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -89,6 +108,8 @@ class _WritePostPageState extends State<WritePostPage> {
             'content': content,
             'imageUrl': imageUrl,
             'userId': user.uid,
+            'userName': userName,
+            'userCountry': userCountry,
             'createdAt': FieldValue.serverTimestamp(),
           });
 
