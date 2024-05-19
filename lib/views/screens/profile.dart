@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:HolaTalk/util/data.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart'; 
 
@@ -62,8 +63,23 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  Future<String?> _getProfileImageUrl(String? uid) async {
+    if (uid != null) {
+      try {
+        final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
+        return await storageRef.getDownloadURL();
+      } catch (e) {
+        print('Failed to get profile image URL: $e');
+        return null;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    User? user = _auth.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Profile"),
@@ -91,11 +107,36 @@ class _ProfileState extends State<Profile> {
                 SizedBox(height: 60),
                 Stack(
                   children: [
-                    CircleAvatar(
-                      backgroundImage: AssetImage(
-                        "assets/images/cm${random.nextInt(10)}.jpeg",
-                      ),
-                      radius: 50,
+                    FutureBuilder<String?>(
+                      future: _getProfileImageUrl(user?.uid),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[200],
+                            child: Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          );
+                        } else if (snapshot.hasError || !snapshot.hasData) {
+                          return CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[200],
+                            child: Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          );
+                        } else {
+                          return CircleAvatar(
+                            radius: 50,
+                            backgroundImage: CachedNetworkImageProvider(snapshot.data!),
+                          );
+                        }
+                      },
                     ),
                     Positioned(
                       bottom: 0,
