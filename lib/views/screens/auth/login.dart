@@ -23,8 +23,7 @@ class _LoginState extends State<Login> {
   bool loading = false;
   bool validate = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  String email = '', password = '', name = '', id = '', country = '';
-  FocusNode idFN = FocusNode();
+  String email = '', password = '', name = '', country = '';
   FocusNode nameFN = FocusNode();
   FocusNode emailFN = FocusNode();
   FocusNode passFN = FocusNode();
@@ -46,12 +45,19 @@ class _LoginState extends State<Login> {
           password: password,
         );
 
-        // Firestore에 마지막 로그인 날짜 기록
-        await _firestore.collection('users').doc(userCredential.user?.uid).update({
-          'lastLogin': FieldValue.serverTimestamp(),
-        });
+        // 이메일 인증 확인
+        if (userCredential.user?.emailVerified ?? false) {
+          // Firestore에 마지막 로그인 날짜 기록
+          await _firestore.collection('users').doc(userCredential.user?.uid).update({
+            'lastLogin': FieldValue.serverTimestamp(),
+          });
 
-        Navigate.pushPageReplacement(context, MainScreen());
+          Navigate.pushPageReplacement(context, MainScreen());
+        } else {
+          // 이메일 인증이 안 되어 있는 경우
+          await _auth.signOut();
+          _showVerificationDialog(userCredential.user);
+        }
       } on FirebaseAuthException catch (e) {
         showInSnackBar(e.message ?? 'Login failed');
       } finally {
@@ -92,7 +98,6 @@ class _LoginState extends State<Login> {
 
         // Firestore에 사용자 정보 저장
         await _firestore.collection('users').doc(userCredential.user?.uid).set({
-          'id': id,
           'name': name,
           'email': email,
           'country': country,
@@ -100,7 +105,17 @@ class _LoginState extends State<Login> {
           'lastLogin': FieldValue.serverTimestamp(),
         });
 
-        Navigate.pushPageReplacement(context, MainScreen());
+        // 이메일 인증 메일 보내기
+        await userCredential.user?.sendEmailVerification();
+
+        // 사용자에게 이메일 인증을 확인하라는 메시지를 표시하고 로그인 화면으로 이동
+        showInSnackBar('Verification email has been sent. Please check your email.');
+
+        // 잠시 대기 후 로그인 화면으로 돌아가기
+        await Future.delayed(Duration(seconds: 3));
+        setState(() {
+          formMode = FormMode.LOGIN;
+        });
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
           showInSnackBar('This email is already in use.');
@@ -125,6 +140,30 @@ class _LoginState extends State<Login> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
   }
 
+  void _showVerificationDialog(User? user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Email not verified'),
+        content: Text('Your email is not verified. Would you like to resend the verification email?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await user?.sendEmailVerification();
+              showInSnackBar('Verification email has been resent. Please check your email.');
+            },
+            child: Text('Resend'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -134,12 +173,14 @@ class _LoginState extends State<Login> {
           children: [
             buildLottieContainer(),
             Expanded(
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 500),
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-                    child: buildFormContainer(),
+              child: SingleChildScrollView( // 스크롤 가능하게 만드는 위젯 추가
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 500),
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+                      child: buildFormContainer(),
+                    ),
                   ),
                 ),
               ),
@@ -249,18 +290,6 @@ class _LoginState extends State<Login> {
           visible: formMode == FormMode.REGISTER,
           child: Column(
             children: [
-              CustomTextField(
-                enabled: !loading,
-                hintText: "ID",
-                textInputAction: TextInputAction.next,
-                validateFunction: Validations.validateId,
-                onSaved: (String? val) {
-                  id = val ?? '';
-                },
-                focusNode: idFN,
-                nextFocusNode: nameFN,
-              ),
-              SizedBox(height: 20.0),
               CustomTextField(
                 enabled: !loading,
                 hintText: "Name",

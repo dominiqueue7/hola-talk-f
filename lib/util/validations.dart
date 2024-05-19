@@ -25,13 +25,6 @@ class Validations {
     return null;
   }
 
-  static String? validateId(String? value) {
-    if (value == null || value.isEmpty) return 'ID is Required.';
-    final RegExp idExp = RegExp(r'^[A-Za-z0-9]+$');
-    if (!idExp.hasMatch(value)) return 'Please enter only alphanumeric characters.';
-    return null;
-  }
-
   static Future<String?> checkEmailInUse(String email) async {
     try {
       final list = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
