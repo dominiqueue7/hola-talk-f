@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:HolaTalk/views/widgets/post_item.dart';
 import 'package:HolaTalk/util/data.dart';
+import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
 
 class Home extends StatefulWidget {
   @override
@@ -41,7 +42,12 @@ class _HomeState extends State<Home> {
           Icons.add,
           color: Colors.white,
         ),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WritePostPage()),
+          );
+        },
       ),
     );
   }
