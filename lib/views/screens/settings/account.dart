@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
+import 'package:HolaTalk/util/validations.dart';
 
 class Account extends StatefulWidget {
   @override
@@ -109,6 +110,7 @@ class _AccountState extends State<Account> {
           content: TextField(
             controller: nameController,
             decoration: InputDecoration(labelText: 'New Name'),
+            maxLength: 30, // 최대 길이 제한
           ),
           actions: <Widget>[
             TextButton(
@@ -121,6 +123,13 @@ class _AccountState extends State<Account> {
               child: Text('Save'),
               onPressed: () async {
                 String newName = nameController.text.trim();
+                String? validationResult = Validations.validateName(newName);
+                if (validationResult != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(validationResult)),
+                  );
+                  return;
+                }
                 if (newName.isNotEmpty && user != null) {
                   await _firestore.collection('users').doc(user.uid).update({'name': newName});
                   Navigator.of(context).pop();
