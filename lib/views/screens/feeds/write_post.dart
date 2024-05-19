@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:HolaTalk/views/widgets/custom_button.dart';
 import 'package:HolaTalk/views/widgets/custom_text_field.dart';
 import 'package:HolaTalk/util/validations.dart';
+import 'package:path_provider/path_provider.dart';
 
 class WritePostPage extends StatefulWidget {
   @override
@@ -16,9 +21,53 @@ class _WritePostPageState extends State<WritePostPage> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   String content = '';
   FocusNode contentFN = FocusNode();
+  File? _imageFile;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File? compressedFile = await compressImage(File(pickedFile.path));
+      setState(() {
+        _imageFile = compressedFile;
+      });
+    }
+  }
+
+  Future<File?> compressImage(File file) async {
+    final dir = await getTemporaryDirectory();
+    final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.heic';
+
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      format: CompressFormat.heic,
+      quality: 50,
+    );
+
+    return result != null ? File(result.path) : null;
+  }
+
+  Future<String?> uploadImage(File file) async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final ref = _storage.ref().child('post_image/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.heic');
+        final uploadTask = ref.putFile(file);
+        final snapshot = await uploadTask;
+        return await snapshot.ref.getDownloadURL();
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+    }
+    return null;
+  }
 
   postMoment() async {
     FormState form = formKey.currentState!;
@@ -31,14 +80,21 @@ class _WritePostPageState extends State<WritePostPage> {
       try {
         User? user = _auth.currentUser;
         if (user != null) {
+          String? imageUrl;
+          if (_imageFile != null) {
+            imageUrl = await uploadImage(_imageFile!);
+          }
+
           await _firestore.collection('moments').add({
             'content': content,
+            'imageUrl': imageUrl,
             'userId': user.uid,
             'createdAt': FieldValue.serverTimestamp(),
           });
 
           showInSnackBar('Moment posted successfully');
           formKey.currentState?.reset();
+          Navigator.pop(context); // 포스트 후 뒤로 가기
         }
       } catch (e) {
         showInSnackBar('Failed to post moment: $e');
@@ -96,6 +152,41 @@ class _WritePostPageState extends State<WritePostPage> {
                   maxLines: null, // Allow multiple lines
                   keyboardType: TextInputType.multiline,
                 ),
+                SizedBox(height: 20.0),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: Icon(Icons.photo_camera),
+                    iconSize: 30.0,
+                    onPressed: pickImage,
+                  ),
+                ),
+                if (_imageFile != null)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0),
+                        child: Image.file(
+                          _imageFile!,
+                          width: 150.0,
+                          height: 100.0,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _imageFile = null;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 SizedBox(height: 20.0),
                 loading
                     ? Center(child: CircularProgressIndicator())
