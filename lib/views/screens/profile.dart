@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +22,7 @@ class _ProfileState extends State<Profile> {
   static Random random = Random();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
@@ -76,6 +78,19 @@ class _ProfileState extends State<Profile> {
     return null;
   }
 
+  Future<String?> _getUserName(String? uid) async {
+    if (uid != null) {
+      try {
+        final userDoc = await _firestore.collection('users').doc(uid).get();
+        return userDoc.data()?['name'];
+      } catch (e) {
+        print('Failed to get user name: $e');
+        return null;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     User? user = _auth.currentUser;
@@ -89,7 +104,7 @@ class _ProfileState extends State<Profile> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => Settings()),
+                MaterialPageRoute(builder: (context) => AppSettings()),
               );
             },
           ),
@@ -163,12 +178,29 @@ class _ProfileState extends State<Profile> {
                   ],
                 ),
                 SizedBox(height: 10),
-                Text(
-                  names[random.nextInt(10)],
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                  ),
+                FutureBuilder<String?>(
+                  future: _getUserName(user?.uid),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasError || !snapshot.hasData) {
+                      return Text(
+                        "Unknown User",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      );
+                    } else {
+                      return Text(
+                        snapshot.data!,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      );
+                    }
+                  },
                 ),
                 SizedBox(height: 3),
                 Text(

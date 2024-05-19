@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:HolaTalk/views/screens/settings/account.dart';
 
-class Settings extends StatelessWidget {
+class AppSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
