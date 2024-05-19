@@ -55,7 +55,6 @@ class _LoginState extends State<Login> {
           Navigate.pushPageReplacement(context, MainScreen());
         } else {
           // 이메일 인증이 안 되어 있는 경우
-          await _auth.signOut();
           _showVerificationDialog(userCredential.user);
         }
       } on FirebaseAuthException catch (e) {
@@ -155,6 +154,7 @@ class _LoginState extends State<Login> {
             onPressed: () async {
               Navigator.of(context).pop();
               await user?.sendEmailVerification();
+              await _auth.signOut();
               showInSnackBar('Verification email has been resent. Please check your email.');
             },
             child: Text('Resend'),
