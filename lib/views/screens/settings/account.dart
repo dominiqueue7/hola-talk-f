@@ -4,7 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 
-class Account extends StatelessWidget {
+class Account extends StatefulWidget {
+  @override
+  _AccountState createState() => _AccountState();
+}
+
+class _AccountState extends State<Account> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -19,10 +24,30 @@ class Account extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          ListTile(
-            leading: Icon(Icons.person),
-            title: Text('ID'),
-            subtitle: Text(user?.uid ?? 'Unknown'),
+          FutureBuilder<DocumentSnapshot>(
+            future: _firestore.collection('users').doc(user?.uid).get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Loading...'),
+                );
+              }
+              if (snapshot.hasError) {
+                return ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Error loading name'),
+                );
+              }
+              var userData = snapshot.data?.data() as Map<String, dynamic>?;
+              var userName = userData?['name'] ?? 'No name';
+              return ListTile(
+                leading: Icon(Icons.person),
+                title: Text('Name'),
+                subtitle: Text(userName),
+                onTap: () => _showChangeNameDialog(context, userName),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.email),
@@ -69,6 +94,46 @@ class Account extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showChangeNameDialog(BuildContext context, String currentName) async {
+    TextEditingController nameController = TextEditingController(text: currentName);
+    User? user = _auth.currentUser;
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Change Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(labelText: 'New Name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                String newName = nameController.text.trim();
+                if (newName.isNotEmpty && user != null) {
+                  await _firestore.collection('users').doc(user.uid).update({'name': newName});
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Name updated successfully')),
+                  );
+                  setState(() {}); // 화면을 갱신합니다.
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
