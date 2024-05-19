@@ -30,8 +30,21 @@ class Account extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.lock),
             title: Text('Change Password'),
-            onTap: () {
-              // 비밀번호 변경 화면으로 이동하는 코드 추가
+            onTap: () async {
+              if (user?.email != null) {
+                await _auth.sendPasswordResetEmail(email: user!.email!);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Password reset email sent to ${user.email}.'),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('No email associated with this account.'),
+                  ),
+                );
+              }
             },
           ),
           ListTile(
