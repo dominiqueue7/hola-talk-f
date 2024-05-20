@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 
 class PostItem extends StatefulWidget {
   final String userId;
   final String name;
-  final String time;
+  final DateTime time;
   final String img;
   final String content;
 
@@ -43,6 +44,25 @@ class _PostItemState extends State<PostItem> {
     }
   }
 
+  String formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays >= 1) {
+      if (dateTime.year == now.year) {
+        return DateFormat('MM/dd HH:mm').format(dateTime); // 올해의 경우 월/일 시:분
+      } else {
+        return DateFormat('yyyy/MM/dd').format(dateTime); // 올해가 아닌 경우 년/월/일
+      }
+    } else {
+      if (difference.inHours >= 1) {
+        return '${difference.inHours} hours ago'; // 1시간 이상
+      } else {
+        return '${difference.inMinutes} minutes ago'; // 1시간 미만
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -71,7 +91,7 @@ class _PostItemState extends State<PostItem> {
                 maxLines: 1,
               ),
               trailing: Text(
-                widget.time,
+                formatTime(widget.time),
                 style: TextStyle(
                   fontWeight: FontWeight.w300,
                   fontSize: 11,

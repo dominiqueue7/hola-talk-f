@@ -40,7 +40,7 @@ class _HomeState extends State<Home> {
               return PostItem(
                 userId: post['userId'],
                 name: post['userName'],
-                time: (post['createdAt'] as Timestamp).toDate().toString(),
+                time: (post['createdAt'] as Timestamp).toDate(),
                 img: post['imageUrl'] ?? '',
                 content: post['content'],
               );
