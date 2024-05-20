@@ -131,7 +131,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             if (widget.img.isNotEmpty)
               CachedNetworkImage(
                 imageUrl: widget.img,
-                height: 170,
+                // height: 170,
                 width: MediaQuery.of(context).size.width,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Center(child: CircularProgressIndicator()),
@@ -141,11 +141,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
               padding: EdgeInsets.symmetric(vertical: 10),
               child: Text(widget.content),
             ),
-            Divider(),
+            SizedBox(height: 20),
             TextField(
               controller: _commentController,
               decoration: InputDecoration(
                 labelText: "Write a comment...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide(),
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.send),
                   onPressed: _postComment,
