@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class PostItem extends StatefulWidget {
   final String userId;
@@ -52,9 +53,13 @@ class _PostItemState extends State<PostItem> {
           children: <Widget>[
             ListTile(
               leading: CircleAvatar(
+                backgroundColor: Colors.grey[200],
+                child: userProfileUrl != null
+                    ? null
+                    : Icon(Icons.person, size: 30.0),
                 backgroundImage: userProfileUrl != null
-                    ? NetworkImage(userProfileUrl!)
-                    : AssetImage('assets/person.png') as ImageProvider,
+                    ? CachedNetworkImageProvider(userProfileUrl!)
+                    : null,
               ),
               contentPadding: EdgeInsets.all(0),
               title: Text(
@@ -62,6 +67,8 @@ class _PostItemState extends State<PostItem> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
               trailing: Text(
                 widget.time,
@@ -72,11 +79,13 @@ class _PostItemState extends State<PostItem> {
               ),
             ),
             if (widget.img.isNotEmpty)
-              Image.network(
-                widget.img,
+              CachedNetworkImage(
+                imageUrl: widget.img,
                 height: 170,
                 width: MediaQuery.of(context).size.width,
                 fit: BoxFit.cover,
+                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) => Icon(Icons.error),
               ),
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
