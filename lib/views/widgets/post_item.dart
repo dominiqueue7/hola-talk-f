@@ -109,7 +109,7 @@ class _PostItemState extends State<PostItem> {
               ),
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
-              child: Text(widget.content),
+              child: Text(widget.content, overflow: TextOverflow.ellipsis, maxLines: 5,),
             ),
           ],
         ),
