@@ -12,6 +12,7 @@ import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:HolaTalk/util/data.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart'; 
+import 'package:HolaTalk/views/widgets/animations/animated_button.dart'; 
 
 class Profile extends StatefulWidget {
   @override
@@ -218,29 +219,17 @@ class _ProfileState extends State<Profile> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    TextButton(
-                      child: Icon(
-                        Icons.message,
-                        color: Colors.white,
-                      ),
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                          Colors.grey,
-                        ),
-                      ),
+                    AnimatedButton(
+                      label: "Message",
+                      color: Colors.grey,
+                      textColor: Colors.white,
                       onPressed: () {},
                     ),
                     SizedBox(width: 10),
-                    TextButton(
-                      child: Icon(
-                        Icons.add,
-                        color: Colors.white,
-                      ),
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
-                          Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
+                    AnimatedButton(
+                      label: "Follow",
+                      color: Theme.of(context).colorScheme.secondary,
+                      textColor: Colors.white,
                       onPressed: () {},
                     ),
                   ],
