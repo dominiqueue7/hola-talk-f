@@ -2,21 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다.
 
 class PostItem extends StatefulWidget {
+  final String postId;
   final String userId;
   final String name;
   final DateTime time;
   final String img;
   final String content;
+  final int? maxLines; // maxLines 추가
 
   PostItem({
     super.key,
+    required this.postId,
     required this.userId,
     required this.name,
     required this.time,
     required this.img,
     required this.content,
+    this.maxLines, // maxLines 추가
   });
 
   @override
@@ -68,6 +73,21 @@ class _PostItemState extends State<PostItem> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
       child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PostDetailPage(
+                postId: widget.postId,
+                userId: widget.userId,
+                name: widget.name,
+                time: widget.time,
+                img: widget.img,
+                content: widget.content,
+              ),
+            ),
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -109,11 +129,14 @@ class _PostItemState extends State<PostItem> {
               ),
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
-              child: Text(widget.content, overflow: TextOverflow.ellipsis, maxLines: 5,),
+              child: Text(
+                widget.content,
+                maxLines: widget.maxLines, // maxLines 설정
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
-        onTap: () {},
       ),
     );
   }

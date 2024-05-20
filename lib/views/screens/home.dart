@@ -38,11 +38,13 @@ class _HomeState extends State<Home> {
             itemBuilder: (BuildContext context, int index) {
               var post = snapshot.data!.docs[index];
               return PostItem(
+                postId: post.id,
                 userId: post['userId'],
                 name: post['userName'],
                 time: (post['createdAt'] as Timestamp).toDate(),
                 img: post['imageUrl'] ?? '',
                 content: post['content'],
+                maxLines: 5, // maxLines를 5로 설정
               );
             },
           );
