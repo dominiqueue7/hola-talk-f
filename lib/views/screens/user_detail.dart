@@ -30,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _profileImageUrl;
   String? _userName;
+  int _postCount = 0;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfileData() async {
     await _loadProfileImage();
     await _loadUserName();
+    await _loadPostCount();
   }
 
   Future<void> _loadProfileImage() async {
@@ -62,6 +64,20 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } catch (e) {
       print('Failed to load user name: $e');
+    }
+  }
+
+  Future<void> _loadPostCount() async {
+    try {
+      final postQuery = await _firestore
+          .collection('moments')
+          .where('userId', isEqualTo: widget.userId)
+          .get();
+      setState(() {
+        _postCount = postQuery.size;
+      });
+    } catch (e) {
+      print('Failed to load post count: $e');
     }
   }
 
@@ -142,9 +158,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    _buildCategory("Posts"),
-                    _buildCategory("Friends"),
-                    _buildCategory("Groups"),
+                    _buildCategory("Posts", _postCount),
+                    _buildCategory("Followers", random.nextInt(10000)),
+                    _buildCategory("Following", random.nextInt(10000)),
                   ],
                 ),
               ),
@@ -176,11 +192,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildCategory(String title) {
+  Widget _buildCategory(String title, int count) {
     return Column(
       children: <Widget>[
         Text(
-          random.nextInt(10000).toString(),
+          count.toString(),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 22,
