@@ -239,6 +239,9 @@ class _ChatPageState extends State<ChatPage> {
               showUserAvatars: true,
               showUserNames: true,
               user: _user,
+              inputOptions: InputOptions(
+                sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+              ),
             );
           },
         ),
