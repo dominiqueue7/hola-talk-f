@@ -192,7 +192,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   fontSize: 22,
                 ),
               ),
-              SizedBox(height: 3),
+              SizedBox(height: 10),
               Text(
                 "Status should be here",
                 style: TextStyle(),

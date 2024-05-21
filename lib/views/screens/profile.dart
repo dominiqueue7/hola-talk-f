@@ -26,6 +26,8 @@ class _ProfileState extends State<Profile> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _profileImageUrl;
   int _postCount = 0;
+  int _followerCount = 0;
+  int _followingCount = 0;
 
   @override
   void initState() {
@@ -38,9 +40,13 @@ class _ProfileState extends State<Profile> {
     if (user != null) {
       String? imageUrl = await _getProfileImageUrl(user.uid);
       int postCount = await _getPostCount(user.uid);
+      int followerCount = await _getFollowerCount(user.uid);
+      int followingCount = await _getFollowingCount(user.uid);
       setState(() {
         _profileImageUrl = imageUrl;
         _postCount = postCount;
+        _followerCount = followerCount;
+        _followingCount = followingCount;
       });
     }
   }
@@ -103,6 +109,26 @@ class _ProfileState extends State<Profile> {
       return postQuery.size;
     } catch (e) {
       print('Failed to get post count: $e');
+      return 0;
+    }
+  }
+
+  Future<int> _getFollowerCount(String uid) async {
+    try {
+      final followerQuery = await _firestore.collection('followers').doc(uid).collection('userFollowers').get();
+      return followerQuery.size;
+    } catch (e) {
+      print('Failed to get follower count: $e');
+      return 0;
+    }
+  }
+
+  Future<int> _getFollowingCount(String uid) async {
+    try {
+      final followingQuery = await _firestore.collection('following').doc(uid).collection('userFollowing').get();
+      return followingQuery.size;
+    } catch (e) {
+      print('Failed to get following count: $e');
       return 0;
     }
   }
@@ -223,30 +249,11 @@ class _ProfileState extends State<Profile> {
                     }
                   },
                 ),
-                SizedBox(height: 3),
+                SizedBox(height: 10),
                 Text(
                   "Status should be here",
                   style: TextStyle(),
                 ),
-                SizedBox(height: 20),
-                // Row(
-                //   mainAxisSize: MainAxisSize.min,
-                //   children: <Widget>[
-                //     AnimatedButton(
-                //       label: "Message",
-                //       color: Colors.grey,
-                //       textColor: Colors.white,
-                //       onPressed: () {},
-                //     ),
-                //     SizedBox(width: 10),
-                //     AnimatedButton(
-                //       label: "Follow",
-                //       color: Theme.of(context).colorScheme.secondary,
-                //       textColor: Colors.white,
-                //       onPressed: () {},
-                //     ),
-                //   ],
-                // ),
                 SizedBox(height: 40),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 50),
@@ -254,8 +261,8 @@ class _ProfileState extends State<Profile> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       _buildCategory("Posts", _postCount),
-                      _buildCategory("Followers", random.nextInt(10000)),
-                      _buildCategory("Following", random.nextInt(10000)),
+                      _buildCategory("Followers", _followerCount),
+                      _buildCategory("Following", _followingCount),
                     ],
                   ),
                 ),
