@@ -211,39 +211,56 @@ class _ChatPageState extends State<ChatPage> {
         appBar: AppBar(
           title: Text(_recipientName ?? 'Loading...'),
         ),
-        body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('chats/${widget.chatId}/messages')
-              .orderBy('createdAt', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('chats/${widget.chatId}/messages')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
 
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
 
-            final messages = snapshot.data!.docs
-                .map((doc) => types.Message.fromJson(
-                    doc.data() as Map<String, dynamic>))
-                .toList();
+                    final messages = snapshot.data!.docs
+                        .map((doc) => types.Message.fromJson(
+                            doc.data() as Map<String, dynamic>))
+                        .toList();
 
-            return Chat(
-              messages: messages,
-              onAttachmentPressed: _handleAttachmentPressed,
-              onMessageTap: _handleMessageTap,
-              onPreviewDataFetched: _handlePreviewDataFetched,
-              onSendPressed: _handleSendPressed,
-              showUserAvatars: true,
-              showUserNames: true,
-              user: _user,
-              inputOptions: InputOptions(
-                sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                    return Chat(
+                      messages: messages,
+                      onAttachmentPressed: _handleAttachmentPressed,
+                      onMessageTap: _handleMessageTap,
+                      onPreviewDataFetched: _handlePreviewDataFetched,
+                      onSendPressed: _handleSendPressed,
+                      showUserAvatars: true,
+                      showUserNames: true,
+                      user: _user,
+                      theme: DefaultChatTheme(
+                        inputBorderRadius: BorderRadius.circular(20.0),
+                        inputTextStyle: TextStyle(
+                          fontSize: 16.0,
+                        ),
+                        inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      ),
+                      inputOptions: InputOptions(
+                        sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       );
 }
