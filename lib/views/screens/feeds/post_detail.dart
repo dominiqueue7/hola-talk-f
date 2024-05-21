@@ -95,7 +95,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => ProfilePage(userId: userId),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 1.0,
+        minChildSize: 0.9,
+        maxChildSize: 1.0,
+        builder: (context, scrollController) {
+          return ProfilePage(
+            userId: userId,
+            scrollController: scrollController,
+          );
+        },
+      ),
     );
   }
 

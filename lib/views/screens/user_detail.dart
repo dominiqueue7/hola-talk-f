@@ -10,8 +10,9 @@ import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
+  final ScrollController scrollController;
 
-  ProfilePage({required this.userId});
+  ProfilePage({required this.userId, required this.scrollController});
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -143,6 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       body: SingleChildScrollView(
+        controller: widget.scrollController,
         padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
         child: Container(
           width: MediaQuery.of(context).size.width,
