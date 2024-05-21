@@ -1,18 +1,12 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:HolaTalk/util/data.dart';
-import 'package:HolaTalk/views/screens/settings/settings.dart';
 import 'package:HolaTalk/views/widgets/animations/animated_button.dart';
+import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   final String userId;
@@ -206,7 +200,22 @@ class _ProfilePageState extends State<ProfilePage> {
                       label: "Message",
                       color: Colors.grey,
                       textColor: Colors.white,
-                      onPressed: () {},
+                      onPressed: () {
+                        // 상대방과의 채팅방 ID를 생성
+                        List<String> ids = [_currentUserId!, widget.userId];
+                        ids.sort();
+                        String chatId = ids.join("_");
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatPage(
+                              chatId: chatId,
+                              recipientId: widget.userId,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     SizedBox(width: 10),
                     AnimatedButton(

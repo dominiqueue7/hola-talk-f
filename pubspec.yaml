@@ -22,6 +22,10 @@ dependencies:
   flutter_image_compress: ^2.3.0
   cached_network_image: ^3.3.1
   intl: ^0.19.0
+  flutter_chat_ui: ^1.6.13
+  flutter_chat_types: ^3.6.2
+  file_picker: ^8.0.3
+  open_filex: ^4.4.0
 
 
 dev_dependencies:
