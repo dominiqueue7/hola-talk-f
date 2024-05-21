@@ -25,19 +25,22 @@ class _ProfileState extends State<Profile> {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _profileImageUrl;
+  int _postCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadProfileImage();
+    _loadProfileData();
   }
 
-  Future<void> _loadProfileImage() async {
+  Future<void> _loadProfileData() async {
     User? user = _auth.currentUser;
     if (user != null) {
       String? imageUrl = await _getProfileImageUrl(user.uid);
+      int postCount = await _getPostCount(user.uid);
       setState(() {
         _profileImageUrl = imageUrl;
+        _postCount = postCount;
       });
     }
   }
@@ -55,7 +58,7 @@ class _ProfileState extends State<Profile> {
         try {
           await _uploadImage(compressedImage, user?.uid);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
-          _loadProfileImage();  // 프로필 이미지 URL을 다시 불러옵니다.
+          _loadProfileData(); // 프로필 이미지 URL을 다시 불러옵니다.
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
         }
@@ -91,6 +94,16 @@ class _ProfileState extends State<Profile> {
     } catch (e) {
       print('Failed to get profile image URL: $e');
       return null;
+    }
+  }
+
+  Future<int> _getPostCount(String uid) async {
+    try {
+      final postQuery = await _firestore.collection('moments').where('userId', isEqualTo: uid).get();
+      return postQuery.size;
+    } catch (e) {
+      print('Failed to get post count: $e');
+      return 0;
     }
   }
 
@@ -240,9 +253,9 @@ class _ProfileState extends State<Profile> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      _buildCategory("Posts"),
-                      _buildCategory("Friends"),
-                      _buildCategory("Groups"),
+                      _buildCategory("Posts", _postCount),
+                      _buildCategory("Followers", random.nextInt(10000)),
+                      _buildCategory("Following", random.nextInt(10000)),
                     ],
                   ),
                 ),
@@ -275,11 +288,11 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildCategory(String title) {
+  Widget _buildCategory(String title, int count) {
     return Column(
       children: <Widget>[
         Text(
-          random.nextInt(10000).toString(),
+          count.toString(),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 22,
