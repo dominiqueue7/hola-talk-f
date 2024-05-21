@@ -216,24 +216,24 @@ class _ProfileState extends State<Profile> {
                   style: TextStyle(),
                 ),
                 SizedBox(height: 20),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    AnimatedButton(
-                      label: "Message",
-                      color: Colors.grey,
-                      textColor: Colors.white,
-                      onPressed: () {},
-                    ),
-                    SizedBox(width: 10),
-                    AnimatedButton(
-                      label: "Follow",
-                      color: Theme.of(context).colorScheme.secondary,
-                      textColor: Colors.white,
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
+                // Row(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: <Widget>[
+                //     AnimatedButton(
+                //       label: "Message",
+                //       color: Colors.grey,
+                //       textColor: Colors.white,
+                //       onPressed: () {},
+                //     ),
+                //     SizedBox(width: 10),
+                //     AnimatedButton(
+                //       label: "Follow",
+                //       color: Theme.of(context).colorScheme.secondary,
+                //       textColor: Colors.white,
+                //       onPressed: () {},
+                //     ),
+                //   ],
+                // ),
                 SizedBox(height: 40),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 50),

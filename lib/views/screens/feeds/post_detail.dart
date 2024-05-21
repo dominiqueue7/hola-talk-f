@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:HolaTalk/views/screens/user_detail.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String postId;
@@ -90,6 +91,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  void _showUserProfile(String userId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => ProfilePage(userId: userId),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,14 +111,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.grey[200],
-                child: userProfileUrl != null
-                    ? null
-                    : Icon(Icons.person, size: 30.0),
-                backgroundImage: userProfileUrl != null
-                    ? CachedNetworkImageProvider(userProfileUrl!)
-                    : null,
+              leading: GestureDetector(
+                onTap: () => _showUserProfile(widget.userId),
+                child: CircleAvatar(
+                  backgroundColor: Colors.grey[200],
+                  child: userProfileUrl != null
+                      ? null
+                      : Icon(Icons.person, size: 30.0),
+                  backgroundImage: userProfileUrl != null
+                      ? CachedNetworkImageProvider(userProfileUrl!)
+                      : null,
+                ),
               ),
               contentPadding: EdgeInsets.all(0),
               title: Text(
@@ -131,7 +143,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
             if (widget.img.isNotEmpty)
               CachedNetworkImage(
                 imageUrl: widget.img,
-                // height: 170,
                 width: MediaQuery.of(context).size.width,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Center(child: CircularProgressIndicator()),
@@ -188,16 +199,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       builder: (context, snapshot) {
                         String? imageUrl = snapshot.data;
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.grey[200],
-                            child: imageUrl != null
-                                ? null
-                                : Icon(Icons.person, size: 30.0),
-                            backgroundImage: imageUrl != null
-                                ? CachedNetworkImageProvider(imageUrl)
-                                : null,
+                          leading: GestureDetector(
+                            onTap: () => _showUserProfile(commentUserId),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.grey[200],
+                              child: imageUrl != null
+                                  ? null
+                                  : Icon(Icons.person, size: 30.0),
+                              backgroundImage: imageUrl != null
+                                  ? CachedNetworkImageProvider(imageUrl)
+                                  : null,
+                            ),
                           ),
-                          title: Text(comment['userName'],style: TextStyle(fontWeight: FontWeight.bold,),overflow: TextOverflow.ellipsis,maxLines: 1,),
+                          title: Text(
+                            comment['userName'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                           subtitle: Text(comment['comment']),
                           trailing: Text(
                             formatTime((comment['createdAt'] as Timestamp).toDate()),
