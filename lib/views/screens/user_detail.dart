@@ -30,12 +30,14 @@ class _ProfilePageState extends State<ProfilePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _profileImageUrl;
   String? _userName;
+  String? _currentUserId;
   int _postCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadProfileData();
+    _currentUserId = _auth.currentUser?.uid;
   }
 
   Future<void> _loadProfileData() async {
@@ -83,6 +85,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isCurrentUser = widget.userId == _currentUserId;
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
@@ -133,25 +137,27 @@ class _ProfilePageState extends State<ProfilePage> {
                 "Status should be here",
                 style: TextStyle(),
               ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  AnimatedButton(
-                    label: "Message",
-                    color: Colors.grey,
-                    textColor: Colors.white,
-                    onPressed: () {},
-                  ),
-                  SizedBox(width: 10),
-                  AnimatedButton(
-                    label: "Follow",
-                    color: Theme.of(context).colorScheme.secondary,
-                    textColor: Colors.white,
-                    onPressed: () {},
-                  ),
-                ],
-              ),
+              if (!isCurrentUser) ...[
+                SizedBox(height: 20),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    AnimatedButton(
+                      label: "Message",
+                      color: Colors.grey,
+                      textColor: Colors.white,
+                      onPressed: () {},
+                    ),
+                    SizedBox(width: 10),
+                    AnimatedButton(
+                      label: "Follow",
+                      color: Theme.of(context).colorScheme.secondary,
+                      textColor: Colors.white,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ],
               SizedBox(height: 40),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 50),
