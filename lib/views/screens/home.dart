@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
 import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다. 
 
@@ -18,9 +17,7 @@ class _HomeState extends State<Home> {
         centerTitle: true,
         actions: <Widget>[
           IconButton(
-            icon: Icon(
-              Icons.filter_list,
-            ),
+            icon: Icon(Icons.filter_list),
             onPressed: () {},
           ),
         ],
