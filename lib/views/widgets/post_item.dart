@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다.
 
 class PostItem extends StatelessWidget {
@@ -103,7 +104,12 @@ class PostItem extends StatelessWidget {
                 height: 170,
                 width: MediaQuery.of(context).size.width,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                placeholder: (context, url) => Center(
+                  child: LoadingAnimationWidget.staggeredDotsWave(
+                    color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                    size: 50,
+                  ),
+                ),
                 errorWidget: (context, url, error) => Icon(Icons.error),
               ),
             Padding(

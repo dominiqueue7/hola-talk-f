@@ -10,7 +10,8 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:HolaTalk/views/screens/settings/settings.dart'; 
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:HolaTalk/views/screens/settings/settings.dart';
 import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다
 
 class Profile extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ProfileState extends State<Profile> {
   int _postCount = 0;
   int _followerCount = 0;
   int _followingCount = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _ProfileState extends State<Profile> {
         _postCount = postCount;
         _followerCount = followerCount;
         _followingCount = followingCount;
+        _isLoading = false;
       });
     }
   }
@@ -175,171 +178,193 @@ class _ProfileState extends State<Profile> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(height: 60),
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey[200],
-                      child: _profileImageUrl == null
-                          ? Icon(
-                              Icons.person,
-                              size: 50,
-                              color: Colors.grey,
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: _profileImageUrl!,
-                              imageBuilder: (context, imageProvider) => CircleAvatar(
-                                radius: 50,
-                                backgroundImage: imageProvider,
-                              ),
-                              placeholder: (context, url) => CircularProgressIndicator(),
-                              errorWidget: (context, url, error) => Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                            ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          _pickAndUploadImage();
-                        },
-                        child: Container(
-                          height: 30,
-                          width: 30,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[200],
-                          ),
-                          child: Icon(
-                            Icons.edit,
-                            color: Colors.black,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                FutureBuilder<String?>(
-                  future: _getUserName(user?.uid),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
-                    } else if (snapshot.hasError || !snapshot.hasData) {
-                      return Text(
-                        "Unknown User",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                        ),
-                      );
-                    } else {
-                      return Text(
-                        snapshot.data!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "Status should be here",
-                  style: TextStyle(),
-                ),
-                SizedBox(height: 40),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 50),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                size: 50,
+              ),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      _buildCategory("Posts", _postCount),
-                      _buildCategory("Followers", _followerCount),
-                      _buildCategory("Following", _followingCount),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .collection('moments')
-                      .where('userId', isEqualTo: user?.uid)
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
-                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (!snapshot.hasData) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(5),
-                      itemCount: snapshot.data!.docs.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        childAspectRatio: 200 / 200,
-                      ),
-                      itemBuilder: (BuildContext context, int index) {
-                        var post = snapshot.data!.docs[index];
-                        String imageUrl = post['imageUrl'] ?? '';
-                        String content = post['content'] ?? '';
-
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PostDetailPage(
-                                  postId: post.id,
-                                  userId: post['userId'],
-                                  name: post['userName'],
-                                  time: (post['createdAt'] as Timestamp).toDate(),
-                                  img: imageUrl,
-                                  content: content,
+                      SizedBox(height: 60),
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[200],
+                            child: _profileImageUrl == null
+                                ? Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  )
+                                : CachedNetworkImage(
+                                    imageUrl: _profileImageUrl!,
+                                    imageBuilder: (context, imageProvider) => CircleAvatar(
+                                      radius: 50,
+                                      backgroundImage: imageProvider,
+                                    ),
+                                    placeholder: (context, url) => LoadingAnimationWidget.waveDots(
+                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                                      size: 50,
+                                    ),
+                                    errorWidget: (context, url, error) => Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                _pickAndUploadImage();
+                              },
+                              child: Container(
+                                height: 30,
+                                width: 30,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey[200],
+                                ),
+                                child: Icon(
+                                  Icons.edit,
+                                  color: Colors.black,
+                                  size: 18,
                                 ),
                               ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      FutureBuilder<String?>(
+                        future: _getUserName(user?.uid),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return LoadingAnimationWidget.waveDots(
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                              size: 50,
                             );
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.all(3.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Color(0xFFEEF7FF),
+                          } else if (snapshot.hasError || !snapshot.hasData) {
+                            return Text(
+                              "Unknown User",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
                               ),
-                              child: imageUrl.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: imageUrl,
-                                      placeholder: (context, url) => CircularProgressIndicator(),
-                                      errorWidget: (context, url, error) => Icon(Icons.error),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Center(
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text(
-                                          content.length > 50 ? '${content.substring(0, 50)}...' : content,
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                            );
+                          } else {
+                            return Text(
+                              snapshot.data!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "Status should be here",
+                        style: TextStyle(),
+                      ),
+                      SizedBox(height: 40),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 50),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            _buildCategory("Posts", _postCount),
+                            _buildCategory("Followers", _followerCount),
+                            _buildCategory("Following", _followingCount),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      StreamBuilder(
+                        stream: FirebaseFirestore.instance
+                            .collection('moments')
+                            .where('userId', isEqualTo: user?.uid)
+                            .orderBy('createdAt', descending: true)
+                            .snapshots(),
+                        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return LoadingAnimationWidget.waveDots(
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                              size: 50,
+                            );
+                          }
+                          if (!snapshot.hasData) {
+                            return Center(child: Text("No posts available."));
+                          }
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.all(5),
+                            itemCount: snapshot.data!.docs.length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 200 / 200,
+                            ),
+                            itemBuilder: (BuildContext context, int index) {
+                              var post = snapshot.data!.docs[index];
+                              String imageUrl = post['imageUrl'] ?? '';
+                              String content = post['content'] ?? '';
+
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PostDetailPage(
+                                        postId: post.id,
+                                        userId: post['userId'],
+                                        name: post['userName'],
+                                        time: (post['createdAt'] as Timestamp).toDate(),
+                                        img: imageUrl,
+                                        content: content,
                                       ),
                                     ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.all(3.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Color(0xFFEEF7FF),
+                                    ),
+                                    child: imageUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: imageUrl,
+                                            placeholder: (context, url) => LoadingAnimationWidget.waveDots(
+                                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                                              size: 50,
+                                            ),
+                                            errorWidget: (context, url, error) => Icon(Icons.error),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Center(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                content.length > 50 ? '${content.substring(0, 50)}...' : content,
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
                                   ),
                           ),
                         );
