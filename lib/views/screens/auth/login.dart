@@ -13,6 +13,7 @@ import 'package:HolaTalk/views/widgets/custom_button.dart';
 import 'package:HolaTalk/views/widgets/custom_text_field.dart';
 import 'package:HolaTalk/util/extensions.dart';
 import 'package:HolaTalk/util/country_data.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -167,6 +168,9 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final loadingColor = isDarkMode ? Colors.white : Colors.blue;
+
     return Scaffold(
       body: GestureDetector( // GestureDetector 추가
         onTap: () {
@@ -183,7 +187,7 @@ class _LoginState extends State<Login> {
                     child: Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-                        child: buildFormContainer(),
+                        child: buildFormContainer(loadingColor),
                       ),
                     ),
                   ),
@@ -212,7 +216,7 @@ class _LoginState extends State<Login> {
     );
   }
 
-  buildFormContainer() {
+  buildFormContainer(Color loadingColor) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +254,7 @@ class _LoginState extends State<Login> {
           ),
         ).fadeInList(3, false),
         SizedBox(height: 20.0),
-        buildButton(),
+        buildButton(loadingColor),
         Visibility(
           visible: formMode == FormMode.LOGIN,
           child: Row(
@@ -382,9 +386,14 @@ class _LoginState extends State<Login> {
     );
   }
 
-  buildButton() {
+  buildButton(Color loadingColor) {
     return loading
-        ? Center(child: CircularProgressIndicator())
+        ? Center(
+            child: LoadingAnimationWidget.staggeredDotsWave(
+              color: loadingColor,
+              size: 50,
+            ),
+          )
         : CustomButton(
             label: formMode == FormMode.LOGIN ? "Login" : formMode == FormMode.REGISTER ? "Register" : "Confirm",
             onPressed: formMode == FormMode.LOGIN ? login : formMode == FormMode.REGISTER ? signUp : _sendPasswordResetEmail,

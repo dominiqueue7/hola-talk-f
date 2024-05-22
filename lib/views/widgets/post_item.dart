@@ -73,8 +73,8 @@ class _PostItemState extends State<PostItem> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 5),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => PostDetailPage(
@@ -87,6 +87,9 @@ class _PostItemState extends State<PostItem> {
               ),
             ),
           );
+          if (result == true) {
+            setState(() {});
+          }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
