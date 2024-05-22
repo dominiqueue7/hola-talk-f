@@ -80,6 +80,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
       _commentController.clear();
+      FocusScope.of(context).unfocus(); // 코멘트 작성 후 키보드 내리기
     }
   }
 
