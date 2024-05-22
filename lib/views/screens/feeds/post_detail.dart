@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:HolaTalk/views/screens/user_detail.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String postId;
@@ -29,6 +31,7 @@ class PostDetailPage extends StatefulWidget {
 class _PostDetailPageState extends State<PostDetailPage> {
   String? userProfileUrl;
   final TextEditingController _commentController = TextEditingController();
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -98,8 +101,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 1.0, // 모달 열렸을때 얼마나 보여줄지 비율
         minChildSize: 0.8, // 얼마나 내려야 닫히는지 비율
-        maxChildSize: 1.0, 
-        expand: false, // 모달 윗부분 빈공간 제거 
+        maxChildSize: 1.0,
+        expand: false, // 모달 윗부분 빈공간 제거
         builder: (context, scrollController) {
           return ProfilePage(
             userId: userId,
@@ -110,140 +113,205 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
+  Future<void> _deletePost() async {
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      await FirebaseFirestore.instance.collection('moments').doc(widget.postId).delete();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post deleted successfully.')));
+      Navigator.pop(context, 'deleted'); // 삭제 후 이전 화면으로 돌아가며 'deleted' 상태를 전달
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete post: $e')));
+    } finally {
+      setState(() {
+        _isDeleting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Post Detail"),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ListTile(
-              leading: GestureDetector(
-                onTap: () => _showUserProfile(widget.userId),
-                child: CircleAvatar(
-                  backgroundColor: Colors.grey[200],
-                  child: userProfileUrl != null
-                      ? null
-                      : Icon(Icons.person, size: 30.0),
-                  backgroundImage: userProfileUrl != null
-                      ? CachedNetworkImageProvider(userProfileUrl!)
-                      : null,
-                ),
-              ),
-              contentPadding: EdgeInsets.all(0),
-              title: Text(
-                widget.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              trailing: Text(
-                formatTime(widget.time),
-                style: TextStyle(
-                  fontWeight: FontWeight.w300,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-            if (widget.img.isNotEmpty)
-              CachedNetworkImage(
-                imageUrl: widget.img,
-                width: MediaQuery.of(context).size.width,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => Icon(Icons.error),
-              ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Text(widget.content),
-            ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _commentController,
-              decoration: InputDecoration(
-                labelText: "Write a comment...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(),
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: _postComment,
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              "Comments",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('comments')
-                  .where('postId', isEqualTo: widget.postId)
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text("No comments yet."));
-                }
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    var comment = snapshot.data!.docs[index];
-                    var commentUserId = comment['userId'];
-                    return FutureBuilder<String?>(
-                      future: _getUserProfileImage(commentUserId),
-                      builder: (context, snapshot) {
-                        String? imageUrl = snapshot.data;
-                        return ListTile(
-                          leading: GestureDetector(
-                            onTap: () => _showUserProfile(commentUserId),
-                            child: CircleAvatar(
-                              backgroundColor: Colors.grey[200],
-                              child: imageUrl != null
-                                  ? null
-                                  : Icon(Icons.person, size: 30.0),
-                              backgroundImage: imageUrl != null
-                                  ? CachedNetworkImageProvider(imageUrl)
-                                  : null,
-                            ),
-                          ),
-                          title: Text(
-                            comment['userName'],
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                          subtitle: Text(comment['comment']),
-                          trailing: Text(
-                            formatTime((comment['createdAt'] as Timestamp).toDate()),
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        );
-                      },
-                    );
-                  },
+        actions: [
+          if (currentUser != null && currentUser.uid == widget.userId && !_isDeleting)
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () async {
+                final shouldDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Delete Post'),
+                    content: Text('Are you sure you want to delete this post?'),
+                    actions: [
+                      TextButton(
+                        child: Text('Cancel'),
+                        onPressed: () => Navigator.pop(context, false),
+                      ),
+                      TextButton(
+                        child: Text('Delete'),
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                    ],
+                  ),
                 );
+                if (shouldDelete == true) {
+                  _deletePost();
+                }
               },
             ),
-          ],
-        ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              FocusScope.of(context).unfocus();
+            },
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  ListTile(
+                    leading: GestureDetector(
+                      onTap: () => _showUserProfile(widget.userId),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.grey[200],
+                        child: userProfileUrl != null
+                            ? null
+                            : Icon(Icons.person, size: 30.0),
+                        backgroundImage: userProfileUrl != null
+                            ? CachedNetworkImageProvider(userProfileUrl!)
+                            : null,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.all(0),
+                    title: Text(
+                      widget.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    trailing: Text(
+                      formatTime(widget.time),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w300,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  if (widget.img.isNotEmpty)
+                    CachedNetworkImage(
+                      imageUrl: widget.img,
+                      width: MediaQuery.of(context).size.width,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
+                    ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Text(widget.content),
+                  ),
+                  SizedBox(height: 20),
+                  TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      labelText: "Write a comment...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide: BorderSide(),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.send),
+                        onPressed: _postComment,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    "Comments",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('comments')
+                        .where('postId', isEqualTo: widget.postId)
+                        .orderBy('createdAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(child: Text("No comments yet."));
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (context, index) {
+                          var comment = snapshot.data!.docs[index];
+                          var commentUserId = comment['userId'];
+                          return FutureBuilder<String?>(
+                            future: _getUserProfileImage(commentUserId),
+                            builder: (context, snapshot) {
+                              String? imageUrl = snapshot.data;
+                              return ListTile(
+                                leading: GestureDetector(
+                                  onTap: () => _showUserProfile(commentUserId),
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.grey[200],
+                                    child: imageUrl != null
+                                        ? null
+                                        : Icon(Icons.person, size: 30.0),
+                                    backgroundImage: imageUrl != null
+                                        ? CachedNetworkImageProvider(imageUrl)
+                                        : null,
+                                  ),
+                                ),
+                                title: Text(
+                                  comment['userName'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                subtitle: Text(comment['comment']),
+                                trailing: Text(
+                                  formatTime((comment['createdAt'] as Timestamp).toDate()),
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isDeleting)
+            Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                color: isDarkMode ? Colors.white : Colors.blue,
+                size: 50,
+              ),
+            ),
+        ],
       ),
     );
   }
