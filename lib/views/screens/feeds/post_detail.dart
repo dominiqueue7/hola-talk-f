@@ -96,9 +96,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
       context: context,
       isScrollControlled: true,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.9,
-        maxChildSize: 1.0,
+        initialChildSize: 1.0, // 모달 열렸을때 얼마나 보여줄지 비율
+        minChildSize: 0.8, // 얼마나 내려야 닫히는지 비율
+        maxChildSize: 1.0, 
+        expand: false, // 모달 윗부분 빈공간 제거 
         builder: (context, scrollController) {
           return ProfilePage(
             userId: userId,
