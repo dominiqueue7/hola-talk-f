@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
-import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다. 
+import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다.
 
 class Home extends StatefulWidget {
   @override
@@ -34,14 +34,27 @@ class _HomeState extends State<Home> {
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (BuildContext context, int index) {
               var post = snapshot.data!.docs[index];
-              return PostItem(
-                postId: post.id,
-                userId: post['userId'],
-                name: post['userName'],
-                time: (post['createdAt'] as Timestamp).toDate(),
-                img: post['imageUrl'] ?? '',
-                content: post['content'],
-                maxLines: 5, // maxLines를 5로 설정
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('users').doc(post['userId']).get(),
+                builder: (context, userSnapshot) {
+                  if (!userSnapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  var userProfileUrl = userSnapshot.data!['profileImageUrl'] ?? '';
+
+                  return PostItem(
+                    postId: post.id,
+                    userId: post['userId'],
+                    name: post['userName'],
+                    time: (post['createdAt'] as Timestamp).toDate(),
+                    img: post['imageUrl'] ?? '',
+                    content: post['content'],
+                    userProfileUrl: userProfileUrl,
+                    maxLines: 5, // maxLines를 5로 설정
+                  );
+                },
               );
             },
           );

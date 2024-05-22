@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다.
 
-class PostItem extends StatefulWidget {
+class PostItem extends StatelessWidget {
   final String postId;
   final String userId;
   final String name;
   final DateTime time;
   final String img;
   final String content;
+  final String? userProfileUrl;
   final int? maxLines; // maxLines 추가
 
   PostItem({
@@ -21,33 +21,9 @@ class PostItem extends StatefulWidget {
     required this.time,
     required this.img,
     required this.content,
+    this.userProfileUrl,
     this.maxLines, // maxLines 추가
   });
-
-  @override
-  _PostItemState createState() => _PostItemState();
-}
-
-class _PostItemState extends State<PostItem> {
-  String? userProfileUrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserProfileImage();
-  }
-
-  Future<void> _loadUserProfileImage() async {
-    try {
-      final ref = FirebaseStorage.instance.ref().child('user_profile/${widget.userId}.heic');
-      final url = await ref.getDownloadURL();
-      setState(() {
-        userProfileUrl = url;
-      });
-    } catch (e) {
-      print('Failed to load user profile image: $e');
-    }
-  }
 
   String formatTime(DateTime dateTime) {
     final now = DateTime.now();
@@ -78,17 +54,17 @@ class _PostItemState extends State<PostItem> {
             context,
             MaterialPageRoute(
               builder: (context) => PostDetailPage(
-                postId: widget.postId,
-                userId: widget.userId,
-                name: widget.name,
-                time: widget.time,
-                img: widget.img,
-                content: widget.content,
+                postId: postId,
+                userId: userId,
+                name: name,
+                time: time,
+                img: img,
+                content: content,
               ),
             ),
           );
           if (result == true) {
-            setState(() {});
+            // 새로고침 로직을 여기에 추가할 수 있습니다.
           }
         },
         child: Column(
@@ -106,7 +82,7 @@ class _PostItemState extends State<PostItem> {
               ),
               contentPadding: EdgeInsets.all(0),
               title: Text(
-                widget.name,
+                name,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
@@ -114,16 +90,16 @@ class _PostItemState extends State<PostItem> {
                 maxLines: 1,
               ),
               trailing: Text(
-                formatTime(widget.time),
+                formatTime(time),
                 style: TextStyle(
                   fontWeight: FontWeight.w300,
                   fontSize: 11,
                 ),
               ),
             ),
-            if (widget.img.isNotEmpty)
+            if (img.isNotEmpty)
               CachedNetworkImage(
-                imageUrl: widget.img,
+                imageUrl: img,
                 height: 170,
                 width: MediaQuery.of(context).size.width,
                 fit: BoxFit.cover,
@@ -133,8 +109,8 @@ class _PostItemState extends State<PostItem> {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
               child: Text(
-                widget.content,
-                maxLines: widget.maxLines, // maxLines 설정
+                content,
+                maxLines: maxLines, // maxLines 설정
                 overflow: TextOverflow.ellipsis,
               ),
             ),
