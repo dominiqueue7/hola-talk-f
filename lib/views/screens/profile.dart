@@ -62,9 +62,12 @@ class _ProfileState extends State<Profile> {
       if (compressedImage != null) {
         User? user = _auth.currentUser;
         try {
-          await _uploadImage(compressedImage, user?.uid);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
-          _loadProfileData(); // 프로필 이미지 URL을 다시 불러옵니다.
+          String? downloadUrl = await _uploadImage(compressedImage, user?.uid);
+          if (downloadUrl != null) {
+            await _updateProfileImageUrl(user?.uid, downloadUrl);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
+            _loadProfileData(); // 프로필 이미지 URL을 다시 불러옵니다.
+          }
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
         }
@@ -86,17 +89,25 @@ class _ProfileState extends State<Profile> {
     return result != null ? File(result.path) : null;
   }
 
-  Future<void> _uploadImage(File file, String? uid) async {
+  Future<String?> _uploadImage(File file, String? uid) async {
     if (uid != null) {
       final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
       await storageRef.putFile(file);
+      return await storageRef.getDownloadURL();
+    }
+    return null;
+  }
+
+  Future<void> _updateProfileImageUrl(String? uid, String downloadUrl) async {
+    if (uid != null) {
+      await _firestore.collection('users').doc(uid).update({'profileImageUrl': downloadUrl});
     }
   }
 
   Future<String?> _getProfileImageUrl(String uid) async {
     try {
-      final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
-      return await storageRef.getDownloadURL();
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      return userDoc.data()?['profileImageUrl'];
     } catch (e) {
       print('Failed to get profile image URL: $e');
       return null;
