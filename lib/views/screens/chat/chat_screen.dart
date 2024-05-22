@@ -36,7 +36,6 @@ class _ChatPageState extends State<ChatPage> {
       imageUrl: _currentUser.photoURL,
     );
     _loadRecipientInfo();
-    _markMessagesAsSeen();
   }
 
   Future<void> _loadRecipientInfo() async {
@@ -56,15 +55,15 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _markMessagesAsSeen() async {
+  void _markMessagesAsSeen() async {
     final chatDoc = FirebaseFirestore.instance.collection('chats').doc(widget.chatId);
     final messagesQuery = await chatDoc.collection('messages')
         .where('author.id', isNotEqualTo: _currentUser.uid)
-        .where('status', isEqualTo: 'sent')
+        .where('status', isEqualTo: types.Status.sent.name)
         .get();
 
     for (var message in messagesQuery.docs) {
-      await message.reference.update({'status': 'seen'});
+      await message.reference.update({'status': types.Status.seen.name});
     }
   }
 
@@ -182,8 +181,8 @@ class _ChatPageState extends State<ChatPage> {
 
     final messageRef = await chatDoc.collection('messages').add(message.toJson());
 
-    // Update the message status to 'sent' after adding it to Firestore
-    await messageRef.update({'status': 'sent'});
+    // Firestore에 추가된 후 메시지 상태를 'sent'로 업데이트
+    await messageRef.update({'status': types.Status.sent.name});
   }
 
   void _handleMessageTap(BuildContext _, types.Message message) async {
@@ -205,8 +204,7 @@ class _ChatPageState extends State<ChatPage> {
         } finally {
           if (mounted) {
             setState(() {
-              // Messages are updated directly in Firestore,
-              // so no need to update local state here
+              // 메시지는 Firestore에서 직접 업데이트되므로 여기서 로컬 상태를 업데이트할 필요 없음
             });
           }
         }
@@ -223,8 +221,7 @@ class _ChatPageState extends State<ChatPage> {
 
     if (mounted) {
       setState(() {
-        // Messages are updated directly in Firestore,
-        // so no need to update local state here
+        // 메시지는 Firestore에서 직접 업데이트되므로 여기서 로컬 상태를 업데이트할 필요 없음
       });
     }
   }
@@ -283,6 +280,9 @@ class _ChatPageState extends State<ChatPage> {
                         },
                       });
                     }).toList();
+
+                    // 메시지 상태를 실시간으로 업데이트하여 `seen` 상태로 변경
+                    WidgetsBinding.instance.addPostFrameCallback((_) => _markMessagesAsSeen());
 
                     return Chat(
                       messages: messages,
