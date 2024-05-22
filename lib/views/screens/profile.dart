@@ -10,9 +10,8 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:HolaTalk/util/data.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart'; 
-import 'package:HolaTalk/views/widgets/animations/animated_button.dart'; 
+import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다
 
 class Profile extends StatefulWidget {
   @override
@@ -160,6 +159,7 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     User? user = _auth.currentUser;
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -278,23 +278,73 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
                 SizedBox(height: 20),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  primary: false,
-                  padding: EdgeInsets.all(5),
-                  itemCount: 15,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 200 / 200,
-                  ),
-                  itemBuilder: (BuildContext context, int index) {
-                    return Padding(
-                      padding: EdgeInsets.all(5.0),
-                      child: Image.asset(
-                        "assets/images/cm${random.nextInt(10)}.jpeg",
-                        fit: BoxFit.cover,
+                StreamBuilder(
+                  stream: FirebaseFirestore.instance
+                      .collection('moments')
+                      .where('userId', isEqualTo: user?.uid)
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.all(5),
+                      itemCount: snapshot.data!.docs.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 200 / 200,
                       ),
+                      itemBuilder: (BuildContext context, int index) {
+                        var post = snapshot.data!.docs[index];
+                        String imageUrl = post['imageUrl'] ?? '';
+                        String content = post['content'] ?? '';
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PostDetailPage(
+                                  postId: post.id,
+                                  userId: post['userId'],
+                                  name: post['userName'],
+                                  time: (post['createdAt'] as Timestamp).toDate(),
+                                  img: imageUrl,
+                                  content: content,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.all(5.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? Colors.grey[800] : Color(0xFFEEF7FF),
+                              ),
+                              child: imageUrl.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      placeholder: (context, url) => CircularProgressIndicator(),
+                                      errorWidget: (context, url, error) => Icon(Icons.error),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text(
+                                          content.length > 50 ? '${content.substring(0, 50)}...' : content,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
