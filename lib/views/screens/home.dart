@@ -10,10 +10,14 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  Future<void> _refresh() async {
+    setState(() {}); // This will rebuild the widget and refresh the data
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Feeds"),
@@ -37,34 +41,37 @@ class _HomeState extends State<Home> {
             );
           }
 
-          return ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (BuildContext context, int index) {
-              var post = snapshot.data!.docs[index];
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: (BuildContext context, int index) {
+                var post = snapshot.data!.docs[index];
 
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(post['userId']).get(),
-                builder: (context, userSnapshot) {
-                  if (!userSnapshot.hasData) {
-                    return SizedBox.shrink();
-                  }
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('users').doc(post['userId']).get(),
+                  builder: (context, userSnapshot) {
+                    if (!userSnapshot.hasData) {
+                      return SizedBox.shrink();
+                    }
 
-                  var userProfileUrl = userSnapshot.data!['profileImageUrl'] ?? '';
+                    var userProfileUrl = userSnapshot.data!['profileImageUrl'] ?? '';
 
-                  return PostItem(
-                    postId: post.id,
-                    userId: post['userId'],
-                    name: post['userName'],
-                    time: (post['createdAt'] as Timestamp).toDate(),
-                    img: post['imageUrl'] ?? '',
-                    content: post['content'],
-                    userProfileUrl: userProfileUrl,
-                    maxLines: 5, // maxLines를 5로 설정
-                  );
-                },
-              );
-            },
+                    return PostItem(
+                      postId: post.id,
+                      userId: post['userId'],
+                      name: post['userName'],
+                      time: (post['createdAt'] as Timestamp).toDate(),
+                      img: post['imageUrl'] ?? '',
+                      content: post['content'],
+                      userProfileUrl: userProfileUrl,
+                      maxLines: 5, // maxLines를 5로 설정
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
