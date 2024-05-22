@@ -159,7 +159,6 @@ class _ProfileState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     User? user = _auth.currentUser;
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -319,10 +318,10 @@ class _ProfileState extends State<Profile> {
                             );
                           },
                           child: Padding(
-                            padding: EdgeInsets.all(5.0),
+                            padding: EdgeInsets.all(3.0),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.grey[800] : Color(0xFFEEF7FF),
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Color(0xFFEEF7FF),
                               ),
                               child: imageUrl.isNotEmpty
                                   ? CachedNetworkImage(
