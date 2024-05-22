@@ -1,16 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,27 +24,35 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final _user = types.User(
-    id: FirebaseAuth.instance.currentUser!.uid,
-  );
-  String? _recipientName;
+  final _currentUser = FirebaseAuth.instance.currentUser!;
+  late types.User _user;
+  late types.User _recipientUser;
 
   @override
   void initState() {
     super.initState();
-    _loadRecipientName();
+    _user = types.User(
+      id: _currentUser.uid,
+      firstName: _currentUser.displayName ?? 'Me',
+      imageUrl: _currentUser.photoURL,
+    );
+    _loadRecipientInfo();
   }
 
-  Future<void> _loadRecipientName() async {
+  Future<void> _loadRecipientInfo() async {
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(widget.recipientId).get();
       if (mounted) {
         setState(() {
-          _recipientName = userDoc.data()?['name'] ?? 'Unknown';
+          _recipientUser = types.User(
+            id: widget.recipientId,
+            firstName: userDoc.data()?['name'] ?? 'Unknown',
+            imageUrl: userDoc.data()?['profileImageUrl'],
+          );
         });
       }
     } catch (e) {
-      print('Failed to load recipient name: $e');
+      print('Failed to load recipient info: $e');
     }
   }
 
@@ -209,7 +214,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Text(_recipientName ?? 'Loading...'),
+          title: Text(_recipientUser?.firstName ?? 'Loading...'),
         ),
         resizeToAvoidBottomInset: true,
         body: SafeArea(
@@ -231,8 +236,21 @@ class _ChatPageState extends State<ChatPage> {
                     }
 
                     final messages = snapshot.data!.docs
-                        .map((doc) => types.Message.fromJson(
-                            doc.data() as Map<String, dynamic>))
+                        .map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final author = data['author'] as Map<String, dynamic>;
+                          final isCurrentUser = author['id'] == _user.id;
+
+                          return types.Message.fromJson({
+                            ...data,
+                            'author': {
+                              ...author,
+                              'imageUrl': isCurrentUser
+                                  ? _user.imageUrl
+                                  : _recipientUser?.imageUrl,
+                            },
+                          });
+                        })
                         .toList();
 
                     return Chat(
