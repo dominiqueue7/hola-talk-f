@@ -8,6 +8,7 @@ import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -33,7 +34,6 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     _user = types.User(
       id: _currentUser.uid,
-      firstName: _currentUser.displayName ?? 'Me',
       imageUrl: _currentUser.photoURL,
     );
     _loadRecipientInfo();
@@ -146,9 +146,27 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _addMessage(types.Message message) async {
-    await FirebaseFirestore.instance
-        .collection('chats/${widget.chatId}/messages')
-        .add(message.toJson());
+    final chatDoc = FirebaseFirestore.instance.collection('chats').doc(widget.chatId);
+
+    final chatSnapshot = await chatDoc.get();
+    if (!chatSnapshot.exists) {
+      await chatDoc.set({
+        'participants': [widget.recipientId, _currentUser.uid],
+      });
+    } else {
+      if (!(chatSnapshot.data()?['participants']?.contains(_currentUser.uid) ?? false)) {
+        await chatDoc.update({
+          'participants': FieldValue.arrayUnion([_currentUser.uid]),
+        });
+      }
+      if (!(chatSnapshot.data()?['participants']?.contains(widget.recipientId) ?? false)) {
+        await chatDoc.update({
+          'participants': FieldValue.arrayUnion([widget.recipientId]),
+        });
+      }
+    }
+
+    await chatDoc.collection('messages').add(message.toJson());
   }
 
   void _handleMessageTap(BuildContext _, types.Message message) async {
@@ -228,7 +246,12 @@ class _ChatPageState extends State<ChatPage> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(
+                        child: LoadingAnimationWidget.staggeredDotsWave(
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                          size: 50,
+                        ),
+                      );
                     }
 
                     if (snapshot.hasError) {
