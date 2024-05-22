@@ -135,7 +135,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -308,7 +307,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           if (_isDeleting)
             Center(
               child: LoadingAnimationWidget.staggeredDotsWave(
-                color: isDarkMode ? Colors.white : Colors.blue,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
                 size: 50,
               ),
             ),
