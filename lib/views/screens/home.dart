@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
 import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다.
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -11,6 +12,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text("Feeds"),
@@ -22,11 +25,16 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('moments').orderBy('createdAt', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+              child: LoadingAnimationWidget.staggeredDotsWave(
+                color: isDarkMode ? Colors.white : Colors.blue,
+                size: 50,
+              ),
+            );
           }
 
           return ListView.builder(
@@ -39,7 +47,7 @@ class _HomeState extends State<Home> {
                 future: FirebaseFirestore.instance.collection('users').doc(post['userId']).get(),
                 builder: (context, userSnapshot) {
                   if (!userSnapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
+                    return SizedBox.shrink();
                   }
 
                   var userProfileUrl = userSnapshot.data!['profileImageUrl'] ?? '';
