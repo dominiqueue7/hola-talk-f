@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -37,6 +36,7 @@ class _ChatPageState extends State<ChatPage> {
       imageUrl: _currentUser.photoURL,
     );
     _loadRecipientInfo();
+    _markMessagesAsSeen();
   }
 
   Future<void> _loadRecipientInfo() async {
@@ -53,6 +53,18 @@ class _ChatPageState extends State<ChatPage> {
       }
     } catch (e) {
       print('Failed to load recipient info: $e');
+    }
+  }
+
+  Future<void> _markMessagesAsSeen() async {
+    final chatDoc = FirebaseFirestore.instance.collection('chats').doc(widget.chatId);
+    final messagesQuery = await chatDoc.collection('messages')
+        .where('author.id', isNotEqualTo: _currentUser.uid)
+        .where('status', isEqualTo: 'sent')
+        .get();
+
+    for (var message in messagesQuery.docs) {
+      await message.reference.update({'status': 'seen'});
     }
   }
 
@@ -113,9 +125,10 @@ class _ChatPageState extends State<ChatPage> {
         name: result.files.single.name,
         size: result.files.single.size,
         uri: result.files.single.path!,
+        status: types.Status.sending,
       );
 
-      _addMessage(message);
+      await _addMessage(message);
     }
   }
 
@@ -139,9 +152,10 @@ class _ChatPageState extends State<ChatPage> {
         size: bytes.length,
         uri: result.path,
         width: image.width.toDouble(),
+        status: types.Status.sending,
       );
 
-      _addMessage(message);
+      await _addMessage(message);
     }
   }
 
@@ -166,7 +180,10 @@ class _ChatPageState extends State<ChatPage> {
       }
     }
 
-    await chatDoc.collection('messages').add(message.toJson());
+    final messageRef = await chatDoc.collection('messages').add(message.toJson());
+
+    // Update the message status to 'sent' after adding it to Firestore
+    await messageRef.update({'status': 'sent'});
   }
 
   void _handleMessageTap(BuildContext _, types.Message message) async {
@@ -186,9 +203,6 @@ class _ChatPageState extends State<ChatPage> {
             await file.writeAsBytes(bytes);
           }
         } finally {
-          final updatedMessage =
-              (message as types.FileMessage).copyWith(isLoading: null);
-
           if (mounted) {
             setState(() {
               // Messages are updated directly in Firestore,
@@ -202,10 +216,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _handlePreviewDataFetched(
-    types.TextMessage message,
-    types.PreviewData previewData,
-  ) {
+  void _handlePreviewDataFetched(types.TextMessage message, types.PreviewData previewData) {
     final updatedMessage = (message as types.TextMessage).copyWith(
       previewData: previewData,
     );
@@ -224,6 +235,7 @@ class _ChatPageState extends State<ChatPage> {
       createdAt: DateTime.now().millisecondsSinceEpoch,
       id: const Uuid().v4(),
       text: message.text,
+      status: types.Status.sending,
     );
 
     _addMessage(textMessage);
@@ -232,7 +244,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Text(_recipientUser?.firstName ?? 'Loading...'),
+          title: Text(_recipientUser.firstName ?? 'Loading...'),
         ),
         resizeToAvoidBottomInset: true,
         body: SafeArea(
@@ -258,23 +270,19 @@ class _ChatPageState extends State<ChatPage> {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
 
-                    final messages = snapshot.data!.docs
-                        .map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final author = data['author'] as Map<String, dynamic>;
-                          final isCurrentUser = author['id'] == _user.id;
+                    final messages = snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final author = data['author'] as Map<String, dynamic>;
+                      final isCurrentUser = author['id'] == _user.id;
 
-                          return types.Message.fromJson({
-                            ...data,
-                            'author': {
-                              ...author,
-                              'imageUrl': isCurrentUser
-                                  ? _user.imageUrl
-                                  : _recipientUser?.imageUrl,
-                            },
-                          });
-                        })
-                        .toList();
+                      return types.Message.fromJson({
+                        ...data,
+                        'author': {
+                          ...author,
+                          'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser?.imageUrl,
+                        },
+                      });
+                    }).toList();
 
                     return Chat(
                       messages: messages,
