@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:HolaTalk/views/widgets/chat_item.dart';
-import 'package:HolaTalk/util/data.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Chats extends StatefulWidget {
   @override
@@ -10,6 +12,7 @@ class Chats extends StatefulWidget {
 class _ChatsState extends State<Chats>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -29,9 +32,7 @@ class _ChatsState extends State<Chats>
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(
-              Icons.filter_list,
-            ),
+            icon: Icon(Icons.filter_list),
             onPressed: () {},
           ),
         ],
@@ -54,56 +55,8 @@ class _ChatsState extends State<Chats>
       body: TabBarView(
         controller: _tabController,
         children: <Widget>[
-          ListView.separated(
-            padding: EdgeInsets.all(10),
-            separatorBuilder: (BuildContext context, int index) {
-              return Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  height: 0.5,
-                  width: MediaQuery.of(context).size.width / 1.3,
-                  child: Divider(),
-                ),
-              );
-            },
-            itemCount: chats.length,
-            itemBuilder: (BuildContext context, int index) {
-              Map chat = chats[index];
-              return ChatItem(
-                dp: chat['dp'],
-                name: chat['name'],
-                isOnline: chat['isOnline'],
-                counter: chat['counter'],
-                msg: chat['msg'],
-                time: chat['time'],
-              );
-            },
-          ),
-          ListView.separated(
-            padding: EdgeInsets.all(10),
-            separatorBuilder: (BuildContext context, int index) {
-              return Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  height: 0.5,
-                  width: MediaQuery.of(context).size.width / 1.3,
-                  child: Divider(),
-                ),
-              );
-            },
-            itemCount: groups.length,
-            itemBuilder: (BuildContext context, int index) {
-              Map chat = groups[index];
-              return ChatItem(
-                dp: chat['dp'],
-                name: chat['name'],
-                isOnline: chat['isOnline'],
-                counter: chat['counter'],
-                msg: chat['msg'],
-                time: chat['time'],
-              );
-            },
-          ),
+          _buildChatsList(context, false),
+          _buildChatsList(context, true),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -113,6 +66,89 @@ class _ChatsState extends State<Chats>
         ),
         onPressed: () {},
       ),
+    );
+  }
+
+  Widget _buildChatsList(BuildContext context, bool isGroup) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('chats')
+          .where('participants', arrayContains: _auth.currentUser?.uid)
+          .where('isGroup', isEqualTo: isGroup)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: LoadingAnimationWidget.staggeredDotsWave(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+              size: 50,
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No ${isGroup ? 'groups' : 'messages'} found.'));
+        }
+
+        return ListView.separated(
+          padding: EdgeInsets.all(10),
+          separatorBuilder: (BuildContext context, int index) {
+            return Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                height: 0.5,
+                width: MediaQuery.of(context).size.width / 1.3,
+                child: Divider(),
+              ),
+            );
+          },
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (BuildContext context, int index) {
+            var chat = snapshot.data!.docs[index];
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(chat['participants'].firstWhere((id) => id != _auth.currentUser!.uid)).get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return SizedBox.shrink();
+                }
+
+                var user = userSnapshot.data!;
+                return FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').orderBy('createdAt', descending: true).limit(1).get(),
+                  builder: (context, messageSnapshot) {
+                    if (!messageSnapshot.hasData) {
+                      return SizedBox.shrink();
+                    }
+
+                    var lastMessage = messageSnapshot.data!.docs.first;
+                    var unreadCount = messageSnapshot.data!.docs.where((doc) => doc['status'] != 'seen' && doc['author']['id'] != _auth.currentUser!.uid).length;
+
+                    // 여기서 createdAt 필드를 적절하게 처리합니다.
+                    DateTime createdAt;
+                    if (lastMessage['createdAt'] is Timestamp) {
+                      createdAt = (lastMessage['createdAt'] as Timestamp).toDate();
+                    } else if (lastMessage['createdAt'] is int) {
+                      createdAt = DateTime.fromMillisecondsSinceEpoch(lastMessage['createdAt']);
+                    } else {
+                      createdAt = DateTime.now(); // 기본값, 예외 발생 시 현재 시간
+                    }
+
+                    return ChatItem(
+                      chatId: chat.id,
+                      dp: user['profileImageUrl'],
+                      name: user['name'],
+                      time: createdAt.toString(),
+                      msg: lastMessage['text'],
+                      isOnline: user['online'],
+                      counter: unreadCount,
+                      recipientId: user.id,
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 

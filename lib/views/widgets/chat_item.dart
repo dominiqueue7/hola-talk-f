@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/views/screens/chat/conversation.dart';
+import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
 
-
-class ChatItem extends StatefulWidget {
-
+class ChatItem extends StatelessWidget {
+  final String chatId;
   final String dp;
   final String name;
   final String time;
   final String msg;
   final bool isOnline;
   final int counter;
+  final String recipientId;
 
   ChatItem({
     super.key,
+    required this.chatId,
     required this.dp,
     required this.name,
     required this.time,
     required this.msg,
     required this.isOnline,
     required this.counter,
+    required this.recipientId,
   });
 
-  @override
-  _ChatItemState createState() => _ChatItemState();
-}
-
-class _ChatItemState extends State<ChatItem> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -35,12 +32,9 @@ class _ChatItemState extends State<ChatItem> {
         leading: Stack(
           children: <Widget>[
             CircleAvatar(
-              backgroundImage: AssetImage(
-                "${widget.dp}",
-              ),
+              backgroundImage: dp.isNotEmpty ? NetworkImage(dp) : null,
               radius: 25,
             ),
-
             Positioned(
               bottom: 0.0,
               left: 6.0,
@@ -54,9 +48,7 @@ class _ChatItemState extends State<ChatItem> {
                 child: Center(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: widget.isOnline
-                          ?Colors.greenAccent
-                          :Colors.grey,
+                      color: isOnline ? Colors.greenAccent : Colors.grey,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     height: 7,
@@ -65,19 +57,17 @@ class _ChatItemState extends State<ChatItem> {
                 ),
               ),
             ),
-
           ],
         ),
-
         title: Text(
-          "${widget.name}",
+          name,
           maxLines: 1,
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          "${widget.msg}",
+          msg,
           overflow: TextOverflow.ellipsis,
           maxLines: 2,
         ),
@@ -86,45 +76,44 @@ class _ChatItemState extends State<ChatItem> {
           children: <Widget>[
             SizedBox(height: 10),
             Text(
-              "${widget.time}",
+              time,
               style: TextStyle(
                 fontWeight: FontWeight.w300,
                 fontSize: 11,
               ),
             ),
-
             SizedBox(height: 5),
-            widget.counter == 0
-                ?SizedBox()
-                :Container(
-              padding: EdgeInsets.all(1),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              constraints: BoxConstraints(
-                minWidth: 11,
-                minHeight: 11,
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(top: 1, left: 5, right: 5),
-                child:Text(
-                  "${widget.counter}",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
+            counter == 0
+                ? SizedBox()
+                : Container(
+                    padding: EdgeInsets.all(1),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 11,
+                      minHeight: 11,
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 1, left: 5, right: 5),
+                      child: Text(
+                        counter.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
           ],
         ),
-        onTap: (){
+        onTap: () {
           Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(
-              builder: (BuildContext context){
-                return Conversation();
+              builder: (BuildContext context) {
+                return ChatPage(chatId: chatId, recipientId: recipientId);
               },
             ),
           );

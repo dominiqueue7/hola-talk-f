@@ -165,18 +165,28 @@ class _ChatPageState extends State<ChatPage> {
     if (!chatSnapshot.exists) {
       await chatDoc.set({
         'participants': [widget.recipientId, _currentUser.uid],
+        'isGroup': false, // 기본값 설정: 처음에는 그룹이 아님
       });
     } else {
-      if (!(chatSnapshot.data()?['participants']?.contains(_currentUser.uid) ?? false)) {
+      // `isGroup` 필드 설정
+      final participants = chatSnapshot.data()?['participants'] ?? [];
+      final isGroup = participants.length > 2;
+
+      if (!(participants.contains(_currentUser.uid))) {
         await chatDoc.update({
           'participants': FieldValue.arrayUnion([_currentUser.uid]),
         });
       }
-      if (!(chatSnapshot.data()?['participants']?.contains(widget.recipientId) ?? false)) {
+      if (!(participants.contains(widget.recipientId))) {
         await chatDoc.update({
           'participants': FieldValue.arrayUnion([widget.recipientId]),
         });
       }
+
+      // 참가자 수에 따라 `isGroup` 필드 업데이트
+      await chatDoc.update({
+        'isGroup': isGroup,
+      });
     }
 
     final messageRef = await chatDoc.collection('messages').add(message.toJson());
