@@ -120,27 +120,38 @@ class _ChatsState extends State<Chats>
                     }
 
                     var lastMessage = messageSnapshot.data!.docs.first;
-                    var unreadCount = messageSnapshot.data!.docs.where((doc) => doc['status'] != 'seen' && doc['author']['id'] != _auth.currentUser!.uid).length;
 
-                    // 여기서 createdAt 필드를 적절하게 처리합니다.
-                    DateTime createdAt;
-                    if (lastMessage['createdAt'] is Timestamp) {
-                      createdAt = (lastMessage['createdAt'] as Timestamp).toDate();
-                    } else if (lastMessage['createdAt'] is int) {
-                      createdAt = DateTime.fromMillisecondsSinceEpoch(lastMessage['createdAt']);
-                    } else {
-                      createdAt = DateTime.now(); // 기본값, 예외 발생 시 현재 시간
-                    }
+                    // unreadCount 계산을 위해 모든 메시지를 다시 쿼리
+                    return FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').where('status', isNotEqualTo: 'seen').get(),
+                      builder: (context, unreadSnapshot) {
+                        if (!unreadSnapshot.hasData) {
+                          return SizedBox.shrink();
+                        }
 
-                    return ChatItem(
-                      chatId: chat.id,
-                      dp: user['profileImageUrl'],
-                      name: user['name'],
-                      time: createdAt.toString(),
-                      msg: lastMessage['text'],
-                      isOnline: user['online'],
-                      counter: unreadCount,
-                      recipientId: user.id,
+                        var unreadCount = unreadSnapshot.data!.docs.length;
+
+                        // 여기서 createdAt 필드를 적절하게 처리합니다.
+                        DateTime createdAt;
+                        if (lastMessage['createdAt'] is Timestamp) {
+                          createdAt = (lastMessage['createdAt'] as Timestamp).toDate();
+                        } else if (lastMessage['createdAt'] is int) {
+                          createdAt = DateTime.fromMillisecondsSinceEpoch(lastMessage['createdAt']);
+                        } else {
+                          createdAt = DateTime.now(); // 기본값, 예외 발생 시 현재 시간
+                        }
+
+                        return ChatItem(
+                          chatId: chat.id,
+                          dp: user['profileImageUrl'],
+                          name: user['name'],
+                          time: createdAt.toString(),
+                          msg: lastMessage['text'],
+                          isOnline: user['online'],
+                          counter: unreadCount,
+                          recipientId: user.id,
+                        );
+                      },
                     );
                   },
                 );
