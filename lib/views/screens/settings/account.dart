@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 import 'package:HolaTalk/util/validations.dart';
+import 'package:HolaTalk/util/online_status_service.dart'; // 실제 경로로 변경
 
 class Account extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _AccountState extends State<Account> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final OnlineStatusService _onlineStatusService = OnlineStatusService(); // OnlineStatusService 인스턴스 추가
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +81,9 @@ class _AccountState extends State<Account> {
             leading: Icon(Icons.logout),
             title: Text('Sign out'),
             onTap: () async {
+              // 로그아웃할 때 온라인 상태를 false로 설정
+              _onlineStatusService.setOffline();
+
               await _auth.signOut();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => Login()), 
