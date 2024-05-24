@@ -1,19 +1,62 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+admin.initializeApp(functions.config().firebase);
 
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+exports.sendNewMessageNotification = functions.firestore
+    .document("chats/{chatId}/messages/{messageId}")
+    .onCreate(async (snap, context) => {
+      const messageData = snap.data();
+      const chatId = context.params.chatId;
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+      if (!messageData || !messageData.author || !messageData.text) {
+        return;
+      }
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+      // Get the author and recipient information
+      const authorId = messageData.author.id;
+      const text = messageData.text;
+
+      const chatDoc = await admin.firestore()
+          .collection("chats").doc(chatId).get();
+      const participants = chatDoc.data().participants;
+
+      if (!participants) {
+        return;
+      }
+
+      // Find the recipient
+      const recipientId = participants.find((uid) => uid !== authorId);
+      if (!recipientId) {
+        return;
+      }
+
+      // Get recipient's FCM token
+      const recipientDoc = await admin.firestore()
+          .collection("users").doc(recipientId).get();
+      const recipientToken = recipientDoc.data().fcmToken;
+
+      if (!recipientToken) {
+        return;
+      }
+
+      // Get author's name
+      const authorDoc = await admin.firestore()
+          .collection("users").doc(authorId).get();
+      const authorName = authorDoc.data().name;
+
+      // Create the notification payload
+      const payload = {
+        notification: {
+          title: `${authorName} sent you a message`,
+          body: text,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        data: {
+          chatId: chatId,
+          authorId: authorId,
+        },
+      };
+
+      // Send the notification
+      return admin.messaging().sendToDevice(recipientToken, payload);
+    });
