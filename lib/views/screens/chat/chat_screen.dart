@@ -168,7 +168,7 @@ class _ChatPageState extends State<ChatPage> {
         'isGroup': false, // 기본값 설정: 처음에는 그룹이 아님
       });
     } else {
-      // `isGroup` 필드 설정
+      // 'isGroup' 필드 설정
       final participants = chatSnapshot.data()?['participants'] ?? [];
       final isGroup = participants.length > 2;
 
@@ -183,7 +183,7 @@ class _ChatPageState extends State<ChatPage> {
         });
       }
 
-      // 참가자 수에 따라 `isGroup` 필드 업데이트
+      // 참가자 수에 따라 'isGroup' 필드 업데이트
       await chatDoc.update({
         'isGroup': isGroup,
       });
