@@ -1,4 +1,4 @@
-package com.example.HolaTalk
+package com.HolaTalk
 
 import io.flutter.embedding.android.FlutterActivity
 

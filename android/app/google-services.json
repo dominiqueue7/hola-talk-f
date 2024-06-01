@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:66487788584:android:7a3c85f8123539c896411d",
         "android_client_info": {
-          "package_name": "com.example.flutter_application_1"
+          "package_name": "com.example.HoloTalk"
         }
       },
       "oauth_client": [
@@ -45,7 +45,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:66487788584:android:9ee8383e20a47db096411d",
         "android_client_info": {
-          "package_name": "com.example.HolaTalk"
+          "package_name": "com.HolaTalk"
         }
       },
       "oauth_client": [
