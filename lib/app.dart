@@ -52,7 +52,7 @@ void initializeNotification() async {
     onDidReceiveBackgroundNotificationResponse: backgroundHandler,
   );
 
-  // Foreground 알림 설정
+  // 푸시 알림 권한 요청
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
@@ -92,7 +92,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // 토큰이 갱신될 때마다 saveTokenToDatabase 메서드를 호출하여 새로운 토큰을 데이터베이스에 저장합니다.
     FirebaseMessaging.instance.onTokenRefresh.listen(saveTokenToDatabase);
 
-    // Firebase 메시지를 수신하고 이를 처리하여 사용자에게 알림을 표시합니다.
+    // foreground 상태에서 메시지 수신
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       RemoteNotification? notification = message.notification;
 
