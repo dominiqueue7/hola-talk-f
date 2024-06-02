@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>66487788584-fbv3tetvlkn71oqi800hovoc2mdantlj.apps.googleusercontent.com</string>
+	<string>66487788584-v2b9m90s94tb2aid4qiij0allqs6fua0.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.66487788584-fbv3tetvlkn71oqi800hovoc2mdantlj</string>
+	<string>com.googleusercontent.apps.66487788584-v2b9m90s94tb2aid4qiij0allqs6fua0</string>
 	<key>API_KEY</key>
 	<string>AIzaSyAVsPeFsAEd6icq-CxuXmZSxY_iGekPl9g</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.holatalk.new.ui</string>
+	<string>com.dominique.flutterApplication1</string>
 	<key>PROJECT_ID</key>
 	<string>ciaotalk</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +29,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:66487788584:ios:86a3872ae764b80296411d</string>
+	<string>1:66487788584:ios:0b3a873ae420e3f696411d</string>
+	<key>DATABASE_URL</key>
+	<string>https://ciaotalk-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>

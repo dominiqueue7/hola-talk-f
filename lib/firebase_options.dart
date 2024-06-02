@@ -65,7 +65,7 @@ class DefaultFirebaseOptions {
     projectId: 'ciaotalk',
     storageBucket: 'ciaotalk.appspot.com',
     iosClientId: '66487788584-fbv3tetvlkn71oqi800hovoc2mdantlj.apps.googleusercontent.com',
-    iosBundleId: 'com.holatalk.new.ui',
+    iosBundleId: 'com.example.flutter_application_1',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

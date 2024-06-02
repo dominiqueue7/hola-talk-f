@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +14,7 @@ import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:googleapis_auth/auth_io.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -193,6 +196,59 @@ class _ChatPageState extends State<ChatPage> {
 
     // Firestore에 추가된 후 메시지 상태를 'sent'로 업데이트
     await messageRef.update({'status': types.Status.sent.name});
+
+    // 메시지 추가 후 푸시 알림 전송
+    await _sendPushNotification(message);
+  }
+
+  Future<ServiceAccountCredentials> _getServiceAccountCredentials() async {
+    final jsonString = await rootBundle.loadString('assets/data/ciaotalk-213fbb4dd307.json');
+    final json = jsonDecode(jsonString);
+    return ServiceAccountCredentials.fromJson(json);
+  }
+
+  Future<String> _getAccessToken() async {
+    final accountCredentials = await _getServiceAccountCredentials();
+
+    final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+    final authClient = await clientViaServiceAccount(accountCredentials, scopes);
+    final accessToken = await authClient.credentials.accessToken.data;
+    return accessToken;
+  }
+
+  Future<void> _sendPushNotification(types.Message message) async {
+    final accessToken = await _getAccessToken();
+
+    final recipientDoc = await FirebaseFirestore.instance.collection('users').doc(widget.recipientId).get();
+    final recipientToken = recipientDoc.data()?['fcmToken'];
+
+    if (recipientToken != null) {
+      final data = {
+        'message': {
+          'token': recipientToken,
+          'notification': {
+            'title': _user.firstName,
+            'body': (message is types.TextMessage) ? message.text : 'You have a new message.',
+          },
+          'data': {
+            'chatId': widget.chatId,
+          },
+        }
+      };
+
+      final response = await http.post(
+        Uri.parse('https://fcm.googleapis.com/v1/projects/66487788584/messages:send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode != 200) {
+        print('Failed to send FCM message: ${response.body}');
+      }
+    }
   }
 
   void _handleMessageTap(BuildContext _, types.Message message) async {
