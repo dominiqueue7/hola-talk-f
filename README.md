@@ -16,3 +16,8 @@ Firebase Cloud Messaging(FCM)
  - `firebase projects:list` 프로젝트 리스트 확인
  - `firebase logout`
  - `firebase login`
+
+# 따로 받아와야하는 파일
+
+lib/firebase_options.dart
+assets/data/ciaotalk-213fbb4dd307.json
