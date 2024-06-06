@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:HolaTalk/views/screens/settings/account.dart';
+import 'package:HolaTalk/views/screens/settings/appearance.dart'; // 새로 추가된 임포트
 
 class AppSettings extends StatelessWidget {
   @override
@@ -39,6 +40,16 @@ class AppSettings extends StatelessWidget {
             title: Text('Chat Settings'),
             onTap: () {
               // Chat Settings 설정 화면으로 이동하는 코드 추가
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.palette), // 아이콘 추가
+            title: Text('Appearance'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Appearance()), // 새로운 화면으로 이동
+              );
             },
           ),
           ListTile(
