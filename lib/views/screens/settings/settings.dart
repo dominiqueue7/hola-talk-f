@@ -3,6 +3,10 @@ import 'package:HolaTalk/views/screens/settings/account.dart';
 import 'package:HolaTalk/views/screens/settings/appearance.dart'; // 새로 추가된 임포트
 
 class AppSettings extends StatelessWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  AppSettings({required this.updateThemeMode});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,7 +21,7 @@ class AppSettings extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => Account()),
+                MaterialPageRoute(builder: (context) => Account(updateThemeMode: updateThemeMode)),
               );
             },
           ),
@@ -48,7 +52,9 @@ class AppSettings extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => Appearance()), // 새로운 화면으로 이동
+                MaterialPageRoute(
+                  builder: (context) => Appearance(updateThemeMode: updateThemeMode), // updateThemeMode 전달
+                ),
               );
             },
           ),

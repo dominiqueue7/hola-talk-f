@@ -7,6 +7,10 @@ import 'package:HolaTalk/views/screens/notifications.dart';
 import 'package:HolaTalk/views/screens/profile.dart';
 
 class MainScreen extends StatefulWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  MainScreen({required this.updateThemeMode});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -49,7 +53,7 @@ class _MainScreenState extends State<MainScreen> {
           Friends(),
           Home(),
           Notifications(),
-          Profile(),
+          Profile(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
         ],
       ),
       bottomNavigationBar: Theme(

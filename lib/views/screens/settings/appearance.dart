@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class Appearance extends StatefulWidget {
-  @override
-  _AppearanceState createState() => _AppearanceState();
-}
+class Appearance extends StatelessWidget {
+  final Function(ThemeMode) updateThemeMode;
 
-class _AppearanceState extends State<Appearance> {
-  ThemeMode _themeMode = ThemeMode.system; // 현재 선택된 테마 모드 상태 저장
+  Appearance({required this.updateThemeMode});
 
   @override
   Widget build(BuildContext context) {
@@ -14,77 +12,106 @@ class _AppearanceState extends State<Appearance> {
       appBar: AppBar(
         title: Text('Appearance'),
       ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Theme',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+      body: ThemeSelection(updateThemeMode: updateThemeMode),
+    );
+  }
+}
+
+class ThemeSelection extends StatefulWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  ThemeSelection({required this.updateThemeMode});
+
+  @override
+  _ThemeSelectionState createState() => _ThemeSelectionState();
+}
+
+class _ThemeSelectionState extends State<ThemeSelection> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemeMode();
+  }
+
+  void _loadThemeMode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int index = prefs.getInt('theme_mode') ?? ThemeMode.system.index;
+    setState(() {
+      _themeMode = ThemeMode.values[index];
+    });
+  }
+
+  void _updateThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+    widget.updateThemeMode(themeMode);
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt('theme_mode', themeMode.index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Theme',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          ListTile(
-            title: Text('System Default'),
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.system,
-              groupValue: _themeMode,
-              onChanged: (ThemeMode? value) {
-                setState(() {
-                  _themeMode = value!;
-                });
-              },
-            ),
-            onTap: () {
-              setState(() {
-                _themeMode = ThemeMode.system;
-              });
+        ),
+        ListTile(
+          title: Text('System Default'),
+          leading: Radio<ThemeMode>(
+            value: ThemeMode.system,
+            groupValue: _themeMode,
+            onChanged: (ThemeMode? value) {
+              _updateThemeMode(value!);
             },
           ),
-          ListTile(
-            title: Text('Dark Mode'),
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.dark,
-              groupValue: _themeMode,
-              onChanged: (ThemeMode? value) {
-                setState(() {
-                  _themeMode = value!;
-                });
-              },
-            ),
-            onTap: () {
-              setState(() {
-                _themeMode = ThemeMode.dark;
-              });
+          onTap: () {
+            _updateThemeMode(ThemeMode.system);
+          },
+        ),
+        ListTile(
+          title: Text('Dark Mode'),
+          leading: Radio<ThemeMode>(
+            value: ThemeMode.dark,
+            groupValue: _themeMode,
+            onChanged: (ThemeMode? value) {
+              _updateThemeMode(value!);
             },
           ),
-          ListTile(
-            title: Text('Light Mode'),
-            leading: Radio<ThemeMode>(
-              value: ThemeMode.light,
-              groupValue: _themeMode,
-              onChanged: (ThemeMode? value) {
-                setState(() {
-                  _themeMode = value!;
-                });
-              },
-            ),
-            onTap: () {
-              setState(() {
-                _themeMode = ThemeMode.light;
-              });
+          onTap: () {
+            _updateThemeMode(ThemeMode.dark);
+          },
+        ),
+        ListTile(
+          title: Text('Light Mode'),
+          leading: Radio<ThemeMode>(
+            value: ThemeMode.light,
+            groupValue: _themeMode,
+            onChanged: (ThemeMode? value) {
+              _updateThemeMode(value!);
             },
           ),
-          // 다른 메뉴 추가 예정인 섹션
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Other Settings',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+          onTap: () {
+            _updateThemeMode(ThemeMode.light);
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Other Settings',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          // 다른 메뉴들 추가 예정
-        ],
-      ),
+        ),
+        // 다른 메뉴들 추가 예정
+      ],
     );
   }
 }

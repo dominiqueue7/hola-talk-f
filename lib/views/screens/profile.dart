@@ -15,6 +15,10 @@ import 'package:HolaTalk/views/screens/settings/settings.dart';
 import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다
 
 class Profile extends StatefulWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  Profile({required this.updateThemeMode});
+
   @override
   _ProfileState createState() => _ProfileState();
 }
@@ -172,7 +176,9 @@ class _ProfileState extends State<Profile> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AppSettings()),
+                MaterialPageRoute(
+                  builder: (context) => AppSettings(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
+                ),
               );
             },
           ),

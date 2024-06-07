@@ -7,6 +7,10 @@ import 'package:HolaTalk/util/validations.dart';
 import 'package:HolaTalk/util/online_status_service.dart'; // 실제 경로로 변경
 
 class Account extends StatefulWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  Account({required this.updateThemeMode}); // 생성자에 updateThemeMode 추가
+
   @override
   _AccountState createState() => _AccountState();
 }
@@ -86,7 +90,9 @@ class _AccountState extends State<Account> {
 
               await _auth.signOut();
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => Login()), 
+                MaterialPageRoute(
+                  builder: (context) => Login(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
+                ), 
                 (Route<dynamic> route) => false,
               );
             },
@@ -206,7 +212,9 @@ class _AccountState extends State<Account> {
                     await user?.delete();
 
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => Login()), 
+                      MaterialPageRoute(
+                        builder: (context) => Login(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
+                      ), 
                       (Route<dynamic> route) => false,
                     );
                   } catch (e) {

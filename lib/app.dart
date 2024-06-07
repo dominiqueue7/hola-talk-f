@@ -1,3 +1,4 @@
+import 'package:HolaTalk/util/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,6 +26,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   var messageString = "";
   late FirebaseAnalytics _analytics;
   late FirebaseAnalyticsObserver _observer;
+  ThemeMode _themeMode = ThemeMode.system;
+  final ThemePreferences _themePreferences = ThemePreferences();
 
   @override
   void initState() {
@@ -69,6 +72,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         });
       }
     });
+
+    _loadThemeMode();
+  }
+
+  void _loadThemeMode() async {
+    ThemeMode themeMode = await _themePreferences.getThemeMode();
+    setState(() {
+      _themeMode = themeMode;
+    });
+  }
+
+  void _updateThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+    _themePreferences.setThemeMode(themeMode);
   }
 
   void saveTokenToDatabase(String token) async {
@@ -109,8 +128,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       title: Constants.appName,
       theme: themeData(ThemeConfig.lightTheme),
       darkTheme: themeData(ThemeConfig.darkTheme),
-      navigatorObservers: [_observer], // Firebase Analytics Observer 추가
-      home: AuthWrapper(),
+      themeMode: _themeMode,
+      navigatorObservers: [_observer],
+      home: AuthWrapper(updateThemeMode: _updateThemeMode),
     );
   }
 
@@ -122,6 +142,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 }
 
 class AuthWrapper extends StatelessWidget {
+  final Function(ThemeMode) updateThemeMode;
+
+  AuthWrapper({required this.updateThemeMode});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -134,9 +158,9 @@ class AuthWrapper extends StatelessWidget {
             ),
           );
         } else if (snapshot.hasData) {
-          return MainScreen();
+          return MainScreen(updateThemeMode: updateThemeMode);
         } else {
-          return Login();
+          return Login(updateThemeMode: updateThemeMode);
         }
       },
     );

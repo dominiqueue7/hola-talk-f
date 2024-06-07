@@ -16,6 +16,10 @@ import 'package:HolaTalk/util/country_data.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Login extends StatefulWidget {
+  final Function(ThemeMode) updateThemeMode; // updateThemeMode 매개변수 추가
+
+  Login({required this.updateThemeMode}); // 생성자에 updateThemeMode 추가
+
   @override
   _LoginState createState() => _LoginState();
 }
@@ -53,7 +57,10 @@ class _LoginState extends State<Login> {
             'lastLogin': FieldValue.serverTimestamp(),
           });
 
-          Navigate.pushPageReplacement(context, MainScreen());
+          Navigate.pushPageReplacement(
+            context,
+            MainScreen(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
+          );
         } else {
           // 이메일 인증이 안 되어 있는 경우
           _showVerificationDialog(userCredential.user);
