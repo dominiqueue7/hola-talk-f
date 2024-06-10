@@ -52,20 +52,22 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCu7lPIZEkHEUi3QwolsWRhtFf2s4lh57c',
-    appId: '1:66487788584:android:9ee8383e20a47db096411d',
+    appId: '1:66487788584:android:2e94c814ef4ded7c96411d',
     messagingSenderId: '66487788584',
     projectId: 'ciaotalk',
+    databaseURL: 'https://ciaotalk-default-rtdb.firebaseio.com',
     storageBucket: 'ciaotalk.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAVsPeFsAEd6icq-CxuXmZSxY_iGekPl9g',
-    appId: '1:66487788584:ios:86a3872ae764b80296411d',
+    appId: '1:66487788584:ios:40f6a69e7b58df5396411d',
     messagingSenderId: '66487788584',
     projectId: 'ciaotalk',
+    databaseURL: 'https://ciaotalk-default-rtdb.firebaseio.com',
     storageBucket: 'ciaotalk.appspot.com',
-    iosClientId: '66487788584-fbv3tetvlkn71oqi800hovoc2mdantlj.apps.googleusercontent.com',
-    iosBundleId: 'com.example.flutter_application_1',
+    iosClientId: '66487788584-rvhl4qm8eq4nf9lfc32t6monumadiei8.apps.googleusercontent.com',
+    iosBundleId: 'com.HolaTalk',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

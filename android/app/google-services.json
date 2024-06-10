@@ -8,17 +8,12 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:66487788584:android:7a3c85f8123539c896411d",
+        "mobilesdk_app_id": "1:66487788584:android:2e94c814ef4ded7c96411d",
         "android_client_info": {
-          "package_name": "com.example.flutter_application_1"
+          "package_name": "com.HolaTalk"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "66487788584-hj9e3qb64voqsot6jkrv0vh8h2p9af1k.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyCu7lPIZEkHEUi3QwolsWRhtFf2s4lh57c"
@@ -28,14 +23,10 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "66487788584-hj9e3qb64voqsot6jkrv0vh8h2p9af1k.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "66487788584-892oem2eo7hu8pq2ajsn4anfesln7sjr.apps.googleusercontent.com",
+              "client_id": "66487788584-rvhl4qm8eq4nf9lfc32t6monumadiei8.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.flutterApplication1"
+                "bundle_id": "com.HolaTalk"
               }
             }
           ]
