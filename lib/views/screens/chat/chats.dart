@@ -129,7 +129,8 @@ class _ChatsState extends State<Chats>
                           return SizedBox.shrink();
                         }
 
-                        var unreadCount = unreadSnapshot.data!.docs.length;
+                        var unreadMessages = unreadSnapshot.data!.docs;
+                        var unreadCount = unreadMessages.where((msg) => msg['author.id'] != _auth.currentUser!.uid).length;
 
                         // 여기서 createdAt 필드를 적절하게 처리합니다.
                         DateTime createdAt;
