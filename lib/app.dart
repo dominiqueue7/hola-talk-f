@@ -169,8 +169,8 @@ class AuthWrapper extends StatelessWidget {
               child: CircularProgressIndicator(),
             ),
           );
-        } else if (snapshot.hasData) {
-          // 사용자가 로그인된 경우 메인 화면으로 이동
+        } else if (snapshot.hasData && snapshot.data!.emailVerified) {
+          // 사용자가 로그인되고 이메일이 인증된 경우 메인 화면으로 이동
           return MainScreen(updateThemeMode: updateThemeMode);
         } else {
           // 사용자가 로그인되지 않은 경우 로그인 화면으로 이동
