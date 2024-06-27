@@ -118,8 +118,9 @@ class _LoginState extends State<Login> {
         // 사용자에게 이메일 인증을 확인하라는 메시지를 표시하고 로그인 화면으로 이동
         showInSnackBar('Verification email has been sent. Please check your email.');
 
-        // 잠시 대기 후 로그인 화면으로 돌아가기
-        await Future.delayed(Duration(seconds: 3));
+        // 로그아웃 시키기
+        await _auth.signOut();
+        
         setState(() {
           formMode = FormMode.LOGIN;
         });
