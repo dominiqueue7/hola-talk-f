@@ -45,14 +45,17 @@
 		<string>fetch</string>
 		<string>location</string>
 		<string>nearby-interaction</string>
-		<string>processing</string>
 		<string>push-to-talk</string>
 		<string>remote-notification</string>
 		<string>voip</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 </dict>
 </plist>
