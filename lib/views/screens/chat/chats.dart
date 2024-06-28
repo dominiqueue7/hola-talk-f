@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:HolaTalk/views/widgets/chat_item.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:intl/intl.dart';
 
 class Chats extends StatefulWidget {
   @override
@@ -13,6 +14,25 @@ class _ChatsState extends State<Chats>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays >= 1) {
+      if (dateTime.year == now.year) {
+        return DateFormat('MM/dd HH:mm').format(dateTime); // 올해의 경우 월/일 시:분
+      } else {
+        return DateFormat('yyyy/MM/dd').format(dateTime); // 올해가 아닌 경우 년/월/일
+      }
+    } else {
+      if (difference.inHours >= 1) {
+        return '${difference.inHours} hours ago'; // 1시간 이상
+      } else {
+        return '${difference.inMinutes} minutes ago'; // 1시간 미만
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -146,7 +166,7 @@ class _ChatsState extends State<Chats>
                           chatId: chat.id,
                           dp: user['profileImageUrl'],
                           name: user['name'],
-                          time: createdAt.toString(),
+                          time: formatTime(createdAt),
                           msg: lastMessage['text'],
                           isOnline: user['online'],
                           counter: unreadCount,
