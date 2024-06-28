@@ -56,7 +56,12 @@ class _HomeState extends State<Home> {
                       return SizedBox.shrink();
                     }
 
-                    var userProfileUrl = userSnapshot.data!['profileImageUrl'] ?? '';
+                    var userProfileUrl = '';
+                    var userData = userSnapshot.data?.data() as Map<String, dynamic>?;
+                    if (userData != null && userData.containsKey('profileImageUrl')) {
+                      userProfileUrl = userData['profileImageUrl'] ?? '';
+                    }
+                    print(userProfileUrl);
 
                     return PostItem(
                       postId: post.id,

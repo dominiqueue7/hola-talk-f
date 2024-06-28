@@ -74,9 +74,9 @@ class PostItem extends StatelessWidget {
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.grey[200],
-                child: userProfileUrl != null
+                child: userProfileUrl != ''
                     ? null
-                    : Icon(Icons.person, size: 30.0),
+                    : Icon(Icons.person, size: 30.0, color: Colors.grey),
                 backgroundImage: userProfileUrl != null
                     ? CachedNetworkImageProvider(userProfileUrl!)
                     : null,
