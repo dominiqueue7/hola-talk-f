@@ -72,15 +72,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Future<void> _postComment() async {
     if (_commentController.text.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('comments').add({
-        'postId': widget.postId,
-        'userId': widget.userId,
-        'userName': widget.name,
-        'comment': _commentController.text,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      _commentController.clear();
-      FocusScope.of(context).unfocus(); // 코멘트 작성 후 키보드 내리기
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Firestore에서 현재 사용자의 이름을 가져옵니다
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+        final userName = userDoc.data()?['name'] ?? '익명';
+        
+        await FirebaseFirestore.instance.collection('comments').add({
+          'postId': widget.postId,
+          'userId': currentUser.uid,
+          'userName': userName,
+          'comment': _commentController.text,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        _commentController.clear();
+        FocusScope.of(context).unfocus(); // 코멘트 작성 후 키보드 내리기
+      }
     }
   }
 
