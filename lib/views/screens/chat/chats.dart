@@ -10,8 +10,7 @@ class Chats extends StatefulWidget {
   _ChatsState createState() => _ChatsState();
 }
 
-class _ChatsState extends State<Chats>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class _ChatsState extends State<Chats> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -141,9 +140,9 @@ class _ChatsState extends State<Chats>
 
                     var lastMessage = messageSnapshot.data!.docs.first;
 
-                    // unreadCount 계산을 위해 모든 메시지를 다시 쿼리
-                    return FutureBuilder<QuerySnapshot>(
-                      future: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').where('status', isNotEqualTo: 'seen').get(),
+                    // unreadCount를 StreamBuilder로 처리하여 실시간 업데이트
+                    return StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').where('status', isNotEqualTo: 'seen').snapshots(),
                       builder: (context, unreadSnapshot) {
                         if (!unreadSnapshot.hasData) {
                           return SizedBox.shrink();
