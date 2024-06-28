@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatItem extends StatelessWidget {
   final String chatId;
@@ -31,10 +32,19 @@ class ChatItem extends StatelessWidget {
         contentPadding: EdgeInsets.all(0),
         leading: Stack(
           children: <Widget>[
-            CircleAvatar(
-              backgroundImage: dp.isNotEmpty ? NetworkImage(dp) : null,
-              radius: 25,
-            ),
+            dp.isNotEmpty
+                ? CircleAvatar(
+                    backgroundImage: CachedNetworkImageProvider(dp),
+                    radius: 25,
+                  )
+                : CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                    ),
+                    radius: 25,
+                  ),
             Positioned(
               bottom: 0.0,
               left: 6.0,

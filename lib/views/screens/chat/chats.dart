@@ -131,6 +131,12 @@ class _ChatsState extends State<Chats> with SingleTickerProviderStateMixin, Auto
                 }
 
                 var user = userSnapshot.data!;
+                var userProfileUrl = '';
+                var userData = user.data() as Map<String, dynamic>?;
+                if (userData != null && userData.containsKey('profileImageUrl')) {
+                  userProfileUrl = userData['profileImageUrl'] ?? '';
+                }
+
                 return FutureBuilder<QuerySnapshot>(
                   future: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').orderBy('createdAt', descending: true).limit(1).get(),
                   builder: (context, messageSnapshot) {
@@ -163,7 +169,7 @@ class _ChatsState extends State<Chats> with SingleTickerProviderStateMixin, Auto
 
                         return ChatItem(
                           chatId: chat.id,
-                          dp: user['profileImageUrl'],
+                          dp: userProfileUrl,
                           name: user['name'],
                           time: formatTime(createdAt),
                           msg: lastMessage['text'],
