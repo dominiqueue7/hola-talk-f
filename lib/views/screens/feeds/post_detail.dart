@@ -295,7 +295,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                     backgroundColor: Colors.grey[200],
                                     child: imageUrl != null
                                         ? null
-                                        : Icon(Icons.person, size: 30.0),
+                                        : Icon(Icons.person, size: 30.0, color: Colors.grey),
                                     backgroundImage: imageUrl != null
                                         ? CachedNetworkImageProvider(imageUrl)
                                         : null,

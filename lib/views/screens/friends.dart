@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/views/screens/user_detail.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Friends extends StatefulWidget {
   @override
@@ -129,8 +130,14 @@ class _FriendsState extends State<Friends>
                 var user = userDocs[index].data() as Map<String, dynamic>;
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(user['profileImageUrl'] ?? ''),
+                    backgroundColor: Colors.white,
+                    backgroundImage: user['profileImageUrl'] != null && user['profileImageUrl'].isNotEmpty 
+                        ? CachedNetworkImageProvider(user['profileImageUrl']) 
+                        : null,
                     radius: 25,
+                    child: user['profileImageUrl'] == null || user['profileImageUrl'].isEmpty 
+                        ? Icon(Icons.person, size: 30.0, color: Colors.grey) 
+                        : null,
                   ),
                   title: Text(user['name'] ?? 'Unknown'),
                   subtitle: Text(user['status'] ?? ''),
@@ -186,8 +193,14 @@ class _FriendsState extends State<Friends>
                 var user = userDocs[index].data() as Map<String, dynamic>;
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(user['profileImageUrl'] ?? ''),
+                    backgroundColor: Colors.white,
+                    backgroundImage: user['profileImageUrl'] != null && user['profileImageUrl'].isNotEmpty 
+                        ? CachedNetworkImageProvider(user['profileImageUrl']) 
+                        : null,
                     radius: 25,
+                    child: user['profileImageUrl'] == null || user['profileImageUrl'].isEmpty 
+                        ? Icon(Icons.person, size: 30.0, color: Colors.grey) 
+                        : null,
                   ),
                   title: Text(user['name'] ?? 'Unknown'),
                   subtitle: Text(user['status'] ?? ''),
@@ -230,8 +243,14 @@ class _FriendsState extends State<Friends>
             var user = snapshot.data!.docs[index].data() as Map<String, dynamic>;
             return ListTile(
               leading: CircleAvatar(
-                backgroundImage: NetworkImage(user['profileImageUrl'] ?? ''),
+                backgroundColor: Colors.white,
+                backgroundImage: user['profileImageUrl'] != null && user['profileImageUrl'].isNotEmpty 
+                    ? CachedNetworkImageProvider(user['profileImageUrl']) 
+                    : null,
                 radius: 25,
+                child: user['profileImageUrl'] == null || user['profileImageUrl'].isEmpty 
+                    ? Icon(Icons.person, size: 30.0, color: Colors.grey) 
+                    : null,
               ),
               title: Text(user['name'] ?? 'Unknown'),
               subtitle: Text(user['status'] ?? ''),
