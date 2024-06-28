@@ -15,6 +15,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:url_launcher/url_launcher.dart'; // URL launcher 패키지 추가
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -253,30 +254,13 @@ class _ChatPageState extends State<ChatPage> {
 
   void _handleMessageTap(BuildContext _, types.Message message) async {
     if (message is types.FileMessage) {
-      var localPath = message.uri;
-
       if (message.uri.startsWith('http')) {
-        try {
-          final client = http.Client();
-          final request = await client.get(Uri.parse(message.uri));
-          final bytes = request.bodyBytes;
-          final documentsDir = (await getApplicationDocumentsDirectory()).path;
-          localPath = '$documentsDir/${message.name}';
-
-          if (!File(localPath).existsSync()) {
-            final file = File(localPath);
-            await file.writeAsBytes(bytes);
-          }
-        } finally {
-          if (mounted) {
-            setState(() {
-              // 메시지는 Firestore에서 직접 업데이트되므로 여기서 로컬 상태를 업데이트할 필요 없음
-            });
-          }
+        if (await canLaunch(message.uri)) {
+          await launch(message.uri); // URL을 기본 브라우저에서 엽니다.
+        } else {
+          throw 'Could not launch ${message.uri}';
         }
-      }
-
-      await OpenFilex.open(localPath);
+      } 
     }
   }
 
@@ -284,12 +268,6 @@ class _ChatPageState extends State<ChatPage> {
     final updatedMessage = (message as types.TextMessage).copyWith(
       previewData: previewData,
     );
-
-    if (mounted) {
-      setState(() {
-        // 메시지는 Firestore에서 직접 업데이트되므로 여기서 로컬 상태를 업데이트할 필요 없음
-      });
-    }
   }
 
   void _handleSendPressed(types.PartialText message) {
@@ -342,7 +320,7 @@ class _ChatPageState extends State<ChatPage> {
                         ...data,
                         'author': {
                           ...author,
-                          'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser?.imageUrl,
+                          'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser.imageUrl ?? 'assets/default_profile_icon.png', // 기본 아이콘 설정
                         },
                       });
                     }).toList();
