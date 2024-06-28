@@ -61,7 +61,6 @@ class _HomeState extends State<Home> {
                     if (userData != null && userData.containsKey('profileImageUrl')) {
                       userProfileUrl = userData['profileImageUrl'] ?? '';
                     }
-                    print(userProfileUrl);
 
                     return PostItem(
                       postId: post.id,
