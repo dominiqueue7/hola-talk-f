@@ -69,11 +69,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ),
           ),
         );
-        // 수신된 메시지를 상태에 반영
-        setState(() {
-          messageString = message.notification?.body ?? '';
-          print("Foreground MESSAGE : $messageString");
-        });
+        // 수신된 메시지를 로그에 출력 (UI 업데이트 생략)
+        print("Foreground MESSAGE : ${message.notification?.body ?? ''}");
       }
     });
 
