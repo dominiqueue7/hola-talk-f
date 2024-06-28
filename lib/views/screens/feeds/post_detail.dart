@@ -127,7 +127,21 @@ class _PostDetailPageState extends State<PostDetailPage> {
     });
 
     try {
-      await FirebaseFirestore.instance.collection('moments').doc(widget.postId).delete();
+      // 트랜잭션을 사용하여 포스트와 관련 댓글을 동시에 삭제합니다.
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // 포스트 삭제
+        transaction.delete(FirebaseFirestore.instance.collection('moments').doc(widget.postId));
+
+        // 관련 댓글 삭제
+        final commentSnapshots = await FirebaseFirestore.instance
+            .collection('comments')
+            .where('postId', isEqualTo: widget.postId)
+            .get();
+        
+        for (var doc in commentSnapshots.docs) {
+          transaction.delete(doc.reference);
+        }
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post deleted successfully.')));
       Navigator.pop(context, 'deleted'); // 삭제 후 이전 화면으로 돌아가며 'deleted' 상태를 전달
     } catch (e) {
