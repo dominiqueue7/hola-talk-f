@@ -108,45 +108,80 @@ class _ChatsState extends State<Chats> with SingleTickerProviderStateMixin, Auto
           return Center(child: Text('No ${isGroup ? 'groups' : 'messages'} found.'));
         }
 
-        return ListView.separated(
-          padding: EdgeInsets.all(10),
-          separatorBuilder: (BuildContext context, int index) {
-            return Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                height: 0.5,
-                width: MediaQuery.of(context).size.width / 1.3,
-                child: Divider(),
-              ),
-            );
-          },
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (BuildContext context, int index) {
-            var chat = snapshot.data!.docs[index];
-            return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(chat['participants'].firstWhere((id) => id != _auth.currentUser!.uid)).get(),
-              builder: (context, userSnapshot) {
-                if (!userSnapshot.hasData) {
-                  return SizedBox.shrink();
-                }
+        var chatDocs = snapshot.data!.docs;
+        var chatDataFutures = chatDocs.map((chat) async {
+          var lastMessageSnapshot = await FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').orderBy('createdAt', descending: true).limit(1).get();
+          if (lastMessageSnapshot.docs.isNotEmpty) {
+            var lastMessage = lastMessageSnapshot.docs.first;
+            DateTime createdAt;
+            if (lastMessage['createdAt'] is Timestamp) {
+              createdAt = (lastMessage['createdAt'] as Timestamp).toDate();
+            } else if (lastMessage['createdAt'] is int) {
+              createdAt = DateTime.fromMillisecondsSinceEpoch(lastMessage['createdAt']);
+            } else {
+              createdAt = DateTime.fromMillisecondsSinceEpoch(0); // 기본값, 예외 발생 시
+            }
+            return {
+              'chat': chat,
+              'lastMessage': lastMessage,
+              'createdAt': createdAt,
+            };
+          } else {
+            return {
+              'chat': chat,
+              'lastMessage': null,
+              'createdAt': DateTime.fromMillisecondsSinceEpoch(0),
+            };
+          }
+        }).toList();
 
-                var user = userSnapshot.data!;
-                var userProfileUrl = '';
-                var userData = user.data() as Map<String, dynamic>?;
-                if (userData != null && userData.containsKey('profileImageUrl')) {
-                  userProfileUrl = userData['profileImageUrl'] ?? '';
-                }
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: Future.wait(chatDataFutures),
+          builder: (context, chatDataSnapshot) {
+            if (!chatDataSnapshot.hasData) {
+              return Center(
+                child: LoadingAnimationWidget.staggeredDotsWave(
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+                  size: 50,
+                ),
+              );
+            }
 
-                return FutureBuilder<QuerySnapshot>(
-                  future: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').orderBy('createdAt', descending: true).limit(1).get(),
-                  builder: (context, messageSnapshot) {
-                    if (!messageSnapshot.hasData) {
+            var chatDataList = chatDataSnapshot.data!;
+            chatDataList.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
+
+            return ListView.separated(
+              padding: EdgeInsets.all(10),
+              separatorBuilder: (BuildContext context, int index) {
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    height: 0.5,
+                    width: MediaQuery.of(context).size.width / 1.3,
+                    child: Divider(),
+                  ),
+                );
+              },
+              itemCount: chatDataList.length,
+              itemBuilder: (BuildContext context, int index) {
+                var chatData = chatDataList[index];
+                var chat = chatData['chat'];
+                var lastMessage = chatData['lastMessage'];
+
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('users').doc(chat['participants'].firstWhere((id) => id != _auth.currentUser!.uid)).get(),
+                  builder: (context, userSnapshot) {
+                    if (!userSnapshot.hasData) {
                       return SizedBox.shrink();
                     }
 
-                    var lastMessage = messageSnapshot.data!.docs.first;
+                    var user = userSnapshot.data!;
+                    var userProfileUrl = '';
+                    var userData = user.data() as Map<String, dynamic>?;
+                    if (userData != null && userData.containsKey('profileImageUrl')) {
+                      userProfileUrl = userData['profileImageUrl'] ?? '';
+                    }
 
-                    // unreadCount를 StreamBuilder로 처리하여 실시간 업데이트
                     return StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('chats').doc(chat.id).collection('messages').where('status', isNotEqualTo: 'seen').snapshots(),
                       builder: (context, unreadSnapshot) {
@@ -157,22 +192,12 @@ class _ChatsState extends State<Chats> with SingleTickerProviderStateMixin, Auto
                         var unreadMessages = unreadSnapshot.data!.docs;
                         var unreadCount = unreadMessages.where((msg) => msg['author.id'] != _auth.currentUser!.uid).length;
 
-                        // 여기서 createdAt 필드를 적절하게 처리합니다.
-                        DateTime createdAt;
-                        if (lastMessage['createdAt'] is Timestamp) {
-                          createdAt = (lastMessage['createdAt'] as Timestamp).toDate();
-                        } else if (lastMessage['createdAt'] is int) {
-                          createdAt = DateTime.fromMillisecondsSinceEpoch(lastMessage['createdAt']);
-                        } else {
-                          createdAt = DateTime.now(); // 기본값, 예외 발생 시 현재 시간
-                        }
-
                         return ChatItem(
                           chatId: chat.id,
                           dp: userProfileUrl,
                           name: user['name'],
-                          time: formatTime(createdAt),
-                          msg: lastMessage['text'],
+                          time: formatTime(chatData['createdAt']),
+                          msg: lastMessage != null ? lastMessage['text'] : '',
                           isOnline: user['online'],
                           counter: unreadCount,
                           recipientId: user.id,
