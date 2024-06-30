@@ -15,13 +15,18 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:url_launcher/url_launcher.dart'; // URL launcher 패키지 추가
+import 'package:url_launcher/url_launcher.dart';
+import 'package:HolaTalk/util/theme_config.dart'; // ThemeConfig 임포트 추가
 
 class ChatPage extends StatefulWidget {
   final String chatId;
   final String recipientId;
 
-  const ChatPage({Key? key, required this.chatId, required this.recipientId}) : super(key: key);
+  const ChatPage({
+    Key? key, 
+    required this.chatId, 
+    required this.recipientId,
+  }) : super(key: key);
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -283,77 +288,99 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(_recipientUser.firstName ?? 'Loading...'),
-        ),
-        resizeToAvoidBottomInset: true,
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('chats/${widget.chatId}/messages')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: LoadingAnimationWidget.staggeredDotsWave(
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                          size: 50,
-                        ),
-                      );
-                    }
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
+    final chatTheme = isDarkMode
+      ? DarkChatTheme(
+          backgroundColor: ThemeConfig.darkBG,
+          inputBackgroundColor: ThemeConfig.darkPrimary,
+          inputTextColor: ThemeConfig.lightBG,
+          inputTextCursorColor: ThemeConfig.lightBG,
+          primaryColor: ThemeConfig.darkAccent,
+          secondaryColor: ThemeConfig.darkPrimary,
+          inputBorderRadius: BorderRadius.circular(20.0),
+          inputTextStyle: TextStyle(fontSize: 16.0, color: ThemeConfig.lightBG),
+          inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        )
+      : DefaultChatTheme(
+          backgroundColor: ThemeConfig.lightBG,
+          inputBackgroundColor: Color.fromARGB(255, 237, 237, 237),
+          inputTextColor: ThemeConfig.darkBG,
+          inputTextCursorColor: ThemeConfig.darkBG,
+          primaryColor: ThemeConfig.lightAccent,
+          secondaryColor: Color.fromARGB(255, 237, 237, 237),
+          inputBorderRadius: BorderRadius.circular(20.0),
+          inputTextStyle: TextStyle(fontSize: 16.0, color: ThemeConfig.darkBG),
+          inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        );
 
-                    final messages = snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final author = data['author'] as Map<String, dynamic>;
-                      final isCurrentUser = author['id'] == _user.id;
-
-                      return types.Message.fromJson({
-                        ...data,
-                        'author': {
-                          ...author,
-                          'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser.imageUrl ?? 'assets/default_profile_icon.png', // 기본 아이콘 설정
-                        },
-                      });
-                    }).toList();
-
-                    // 메시지 상태를 실시간으로 업데이트하여 `seen` 상태로 변경
-                    WidgetsBinding.instance.addPostFrameCallback((_) => _markMessagesAsSeen());
-
-                    return Chat(
-                      messages: messages,
-                      onAttachmentPressed: _handleAttachmentPressed,
-                      onMessageTap: _handleMessageTap,
-                      onPreviewDataFetched: _handlePreviewDataFetched,
-                      onSendPressed: _handleSendPressed,
-                      showUserAvatars: true,
-                      showUserNames: true,
-                      user: _user,
-                      theme: DefaultChatTheme(
-                        inputBorderRadius: BorderRadius.circular(20.0),
-                        inputTextStyle: TextStyle(
-                          fontSize: 16.0,
-                        ),
-                        inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                        inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      ),
-                      inputOptions: InputOptions(
-                        sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_recipientUser.firstName ?? 'Loading...'),
+      ),
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('chats/${widget.chatId}/messages')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: LoadingAnimationWidget.staggeredDotsWave(
+                        color: isDarkMode ? Colors.white : Colors.blue,
+                        size: 50,
                       ),
                     );
-                  },
-                ),
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+
+                  final messages = snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final author = data['author'] as Map<String, dynamic>;
+                    final isCurrentUser = author['id'] == _user.id;
+
+                    return types.Message.fromJson({
+                      ...data,
+                      'author': {
+                        ...author,
+                        'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser.imageUrl ?? 'assets/default_profile_icon.png',
+                      },
+                    });
+                  }).toList();
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _markMessagesAsSeen());
+
+                  return Chat(
+                    messages: messages,
+                    onAttachmentPressed: _handleAttachmentPressed,
+                    onMessageTap: _handleMessageTap,
+                    onPreviewDataFetched: _handlePreviewDataFetched,
+                    onSendPressed: _handleSendPressed,
+                    showUserAvatars: true,
+                    showUserNames: true,
+                    user: _user,
+                    theme: chatTheme,
+                    inputOptions: InputOptions(
+                      sendButtonVisibilityMode: SendButtonVisibilityMode.always,
+                    ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
