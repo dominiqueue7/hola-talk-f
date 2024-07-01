@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,6 +58,7 @@ class _ChatPageState extends State<ChatPage> {
             firstName: userDoc.data()?['name'] ?? 'Unknown',
             imageUrl: userDoc.data()?['profileImageUrl'],
           );
+          print('Recipient imageUrl: ${_recipientUser.imageUrl}');
         });
       }
     } catch (e) {
@@ -287,6 +289,19 @@ class _ChatPageState extends State<ChatPage> {
     _addMessage(textMessage);
   }
 
+  Widget avatarBuilder(types.User user) {
+    if (user.imageUrl != null) {
+      return CircleAvatar(
+        backgroundImage: CachedNetworkImageProvider(user.imageUrl!),
+      );
+    } else {
+      return CircleAvatar(
+        child: Icon(Icons.person),
+        backgroundColor: Colors.grey[300],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -354,7 +369,7 @@ class _ChatPageState extends State<ChatPage> {
                       ...data,
                       'author': {
                         ...author,
-                        'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser.imageUrl ?? 'assets/default_profile_icon.png',
+                        'imageUrl': isCurrentUser ? _user.imageUrl : _recipientUser.imageUrl,
                       },
                     });
                   }).toList();
@@ -371,6 +386,7 @@ class _ChatPageState extends State<ChatPage> {
                     showUserNames: true,
                     user: _user,
                     theme: chatTheme,
+                    avatarBuilder: avatarBuilder,
                     inputOptions: InputOptions(
                       sendButtonVisibilityMode: SendButtonVisibilityMode.always,
                     ),
