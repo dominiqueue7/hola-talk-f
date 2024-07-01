@@ -251,6 +251,8 @@ class _ChatPageState extends State<ChatPage> {
             inputTextStyle: TextStyle(fontSize: 16.0, color: ThemeConfig.lightBG),
             inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            messageInsetsHorizontal: 20,
+            messageInsetsVertical: 7,
           )
         : DefaultChatTheme(
             backgroundColor: ThemeConfig.lightBG,
@@ -263,6 +265,8 @@ class _ChatPageState extends State<ChatPage> {
             inputTextStyle: TextStyle(fontSize: 16.0, color: ThemeConfig.darkBG),
             inputPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             inputMargin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            messageInsetsHorizontal: 20,
+            messageInsetsVertical: 7,
           );
 
     return Scaffold(
