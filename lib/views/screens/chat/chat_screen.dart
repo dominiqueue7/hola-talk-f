@@ -207,11 +207,34 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _handleMessageTap(BuildContext _, types.Message message) async {
-    if (message is types.FileMessage && message.uri.startsWith('http')) {
-      await launchUrl(Uri.parse(message.uri));
+    if (message is types.TextMessage) {
+      final urlRegExp = RegExp(r"(https?:\/\/[^\s]+)");
+      final matches = urlRegExp.allMatches(message.text);
+      
+      for (final match in matches) {
+        final url = match.group(0);
+        if (url != null) {
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(
+              Uri.parse(url),
+              mode: LaunchMode.externalApplication,
+            );
+          }
+        }
+      }
+    } else if (message is types.FileMessage && message.uri.startsWith('http')) {
+      if (await canLaunchUrl(Uri.parse(message.uri))) {
+        await launchUrl(
+          Uri.parse(message.uri),
+          mode: LaunchMode.inAppWebView,
+          webViewConfiguration: WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
+      }
     }
   }
-
   void _handleSendPressed(types.PartialText message) {
     final textMessage = types.TextMessage(
       author: _user,
