@@ -13,8 +13,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:mime/mime.dart';
 import 'package:uuid/uuid.dart';
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:HolaTalk/util/theme_config.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -206,35 +206,40 @@ class _ChatPageState extends State<ChatPage> {
     return authClient.credentials.accessToken.data;
   }
 
-  Future<void> _handleMessageTap(BuildContext _, types.Message message) async {
-    if (message is types.TextMessage) {
-      final urlRegExp = RegExp(r"(https?:\/\/[^\s]+)");
-      final matches = urlRegExp.allMatches(message.text);
-      
-      for (final match in matches) {
-        final url = match.group(0);
-        if (url != null) {
-          if (await canLaunchUrl(Uri.parse(url))) {
-            await launchUrl(
-              Uri.parse(url),
-              mode: LaunchMode.externalApplication,
-            );
-          }
-        }
+  Future<void> _launchInApp(Uri url) async {
+    try {
+      final bool launched = await launchUrl(
+        url,
+        mode: LaunchMode.inAppWebView,
+        webViewConfiguration: const WebViewConfiguration(
+          enableJavaScript: true,
+          enableDomStorage: true,
+        ),
+      );
+      if (!launched) {
+        throw 'Could not launch $url';
       }
-    } else if (message is types.FileMessage && message.uri.startsWith('http')) {
-      if (await canLaunchUrl(Uri.parse(message.uri))) {
-        await launchUrl(
-          Uri.parse(message.uri),
-          mode: LaunchMode.inAppWebView,
-          webViewConfiguration: WebViewConfiguration(
-            enableJavaScript: true,
-            enableDomStorage: true,
-          ),
-        );
-      }
+    } catch (e) {
+      print('Error launching URL: $e');
     }
   }
+
+  void _handleMessageTap(BuildContext _, types.Message message) {
+    String? urlString;
+    if (message is types.TextMessage) {
+      final urlRegExp = RegExp(r"(https?:\/\/[^\s]+)");
+      final match = urlRegExp.firstMatch(message.text);
+      urlString = match?.group(0);
+    } else if (message is types.FileMessage && message.uri.startsWith('http')) {
+      urlString = message.uri;
+    }
+
+    if (urlString != null) {
+      final url = Uri.parse(urlString);
+      _launchInApp(url);
+    }
+  }
+
   void _handleSendPressed(types.PartialText message) {
     final textMessage = types.TextMessage(
       author: _user,
