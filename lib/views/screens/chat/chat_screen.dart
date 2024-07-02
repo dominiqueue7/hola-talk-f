@@ -229,6 +229,23 @@ class _ChatPageState extends State<ChatPage> {
         : CircleAvatar(child: Icon(Icons.person), backgroundColor: Colors.grey[300]);
   }
 
+  Widget _customBubbleBuilder(Widget child, {required types.Message message, required bool nextMessageInGroup}) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bubbleColor = message.author.id == _user.id
+      ? (isDarkMode ? Colors.blue[700] : Colors.blue[300])
+      : (isDarkMode ? Colors.grey[700] : Colors.grey[300]);
+
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+      child: Material(
+        borderRadius: BorderRadius.circular(1.0),
+        elevation: 2.0,
+        color: bubbleColor,
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -316,6 +333,7 @@ class _ChatPageState extends State<ChatPage> {
             theme: chatTheme,
             avatarBuilder: _avatarBuilder,
             inputOptions: InputOptions(sendButtonVisibilityMode: SendButtonVisibilityMode.always),
+            bubbleBuilder: _customBubbleBuilder,
           );
         },
       ),
