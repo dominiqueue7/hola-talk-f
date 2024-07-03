@@ -9,10 +9,37 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _opacityAnimation;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 2000),
+    );
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   // 새로고침 함수
   Future<void> _refresh() async {
-    setState(() {}); // 위젯을 재빌드하여 데이터를 새로고침합니다.
+    setState(() {
+      _isLoading = true;
+    });
+    await _loadAllData();
+    setState(() {
+      _isLoading = false;
+    });
+    _animationController.forward();
   }
 
   // 모든 데이터를 로드하는 함수
@@ -82,7 +109,20 @@ class _HomeState extends State<Home> {
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(child: Text("No data available."));
         } else {
-          return _buildPostList(snapshot.data!);
+          if (_isLoading) {
+            _isLoading = false;
+            _animationController.forward();
+          }
+          return AnimatedBuilder(
+            animation: _opacityAnimation,
+            builder: (context, child) {
+              return Opacity(
+                opacity: _opacityAnimation.value,
+                child: child,
+              );
+            },
+            child: _buildPostList(snapshot.data!),
+          );
         }
       },
     );
