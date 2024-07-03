@@ -15,6 +15,7 @@ import 'package:uuid/uuid.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:HolaTalk/util/theme_config.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:characters/characters.dart';
 
 class ChatPage extends StatefulWidget {
   final String chatId;
@@ -262,6 +263,16 @@ class _ChatPageState extends State<ChatPage> {
     final bubbleColor = message.author.id == _user.id
       ? (isDarkMode ? Colors.blue[700] : Colors.blue[300])
       : (isDarkMode ? Colors.grey[700] : Colors.grey[300]);
+
+    bool _isSingleEmoji(String text) {
+      final characters = text.characters;
+      return characters.length == 1;
+    }      
+
+    if (message is types.TextMessage && _isSingleEmoji(message.text)) {
+      // 단일 이모지인 경우 기본 버블 빌더 사용
+      return child;
+    }
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
