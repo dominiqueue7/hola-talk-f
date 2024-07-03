@@ -6,6 +6,7 @@ import 'package:HolaTalk/views/screens/home.dart';
 import 'package:HolaTalk/views/screens/notifications.dart';
 import 'package:HolaTalk/views/screens/profile.dart';
 
+// 메인 화면 위젯 클래스
 class MainScreen extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode;
 
@@ -17,7 +18,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late PageController _pageController;
-  int _page = 2;
+  int _page = 2; // 초기 페이지 인덱스 설정 (Home 화면)
 
   @override
   void initState() {
@@ -31,12 +32,14 @@ class _MainScreenState extends State<MainScreen> {
     super.dispose();
   }
 
+  // 페이지 변경 시 호출되는 메서드
   void onPageChanged(int page) {
     setState(() {
       _page = page;
     });
   }
 
+  // 하단 네비게이션 바 탭 시 호출되는 메서드
   void navigationTapped(int page) {
     _pageController.jumpToPage(page);
   }
@@ -45,7 +48,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView(
-        physics: NeverScrollableScrollPhysics(),
+        physics: NeverScrollableScrollPhysics(), // 스와이프로 페이지 전환 비활성화
         controller: _pageController,
         onPageChanged: onPageChanged,
         children: <Widget>[
@@ -53,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
           Friends(),
           Home(),
           Notifications(),
-          Profile(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
+          Profile(updateThemeMode: widget.updateThemeMode), // 테마 모드 업데이트 함수 전달
         ],
       ),
       bottomNavigationBar: Theme(
