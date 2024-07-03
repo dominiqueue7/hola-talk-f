@@ -362,6 +362,11 @@ class _ChatPageState extends State<ChatPage> {
             avatarBuilder: _avatarBuilder,
             inputOptions: InputOptions(sendButtonVisibilityMode: SendButtonVisibilityMode.always),
             bubbleBuilder: _customBubbleBuilder,
+            emojiEnlargementBehavior: EmojiEnlargementBehavior.single,
+            hideBackgroundOnEmojiMessages: true,
+            textMessageOptions: TextMessageOptions(
+              onLinkPressed: (String url) => _launchInApp(Uri.parse(url)),
+            ),
           );
         },
       ),
