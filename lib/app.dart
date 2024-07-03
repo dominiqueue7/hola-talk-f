@@ -1,6 +1,5 @@
 import 'package:HolaTalk/util/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -14,7 +13,7 @@ import 'package:HolaTalk/util/online_status_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 
-// Flutter 로컬 알림 플러그인 초기화
+// Flutter 로컬 알림 플러그인을 초기화합니다.
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 class MyApp extends StatefulWidget {
@@ -24,7 +23,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final OnlineStatusService _onlineStatusService = OnlineStatusService();
-  var messageString = "";
   late FirebaseAnalytics _analytics;
   late FirebaseAnalyticsObserver _observer;
   ThemeMode _themeMode = ThemeMode.system;
@@ -33,68 +31,110 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    // 앱이 시작될 때 온라인 상태로 설정
     WidgetsBinding.instance.addObserver(this);
     _onlineStatusService.setOnline();
+    _initializeFirebaseAnalytics();
+    _initializeFirebaseMessaging();
+    _initializeNotifications();
+    _requestNotificationPermissions();
+    _handleInitialMessage();
+    _loadThemeMode();
+  }
 
-    // Firebase Analytics 초기화
+  // Firebase Analytics를 초기화합니다.
+  void _initializeFirebaseAnalytics() {
     _analytics = FirebaseAnalytics.instance;
     _observer = FirebaseAnalyticsObserver(analytics: _analytics);
+  }
 
-    // Firebase Messaging 초기화 및 토큰 저장
+  // Firebase Messaging을 초기화하고 토큰을 저장합니다.
+  void _initializeFirebaseMessaging() {
     FirebaseMessaging.instance.getToken().then((token) {
       if (token != null) {
         saveTokenToDatabase(token);
       }
     });
 
-    // 토큰이 갱신될 때마다 토큰을 데이터베이스에 저장
     FirebaseMessaging.instance.onTokenRefresh.listen(saveTokenToDatabase);
 
-    // foreground 상태에서 메시지 수신
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      RemoteNotification? notification = message.notification;
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+  }
 
-      if (notification != null) {
-        // 알림을 표시
-        flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'high_importance_channel',
-              'high_importance_notification',
-              importance: Importance.max,
-            ),
+  // 알림을 초기화합니다.
+  Future<void> _initializeNotifications() async {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel',
+      'high_importance_notification',
+      importance: Importance.max,
+    );
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await flutterLocalNotificationsPlugin.initialize(
+      InitializationSettings(
+        android: AndroidInitializationSettings("@mipmap/ic_launcher"),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveNotificationResponse: (details) {
+        // 알림 응답 처리 로직
+      },
+      onDidReceiveBackgroundNotificationResponse: _backgroundHandler,
+    );
+  }
+
+  // 푸시 알림 권한을 요청합니다.
+  Future<void> _requestNotificationPermissions() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    print('User granted permission: ${settings.authorizationStatus}');
+  }
+
+  // 앱이 종료된 상태에서 알림을 통해 열릴 때의 메시지를 처리합니다.
+  Future<void> _handleInitialMessage() async {
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      // 초기 메시지 처리 로직
+    }
+  }
+
+  // 포그라운드 상태에서 메시지를 처리합니다.
+  void _handleForegroundMessage(RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    if (notification != null) {
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'high_importance_channel',
+            'high_importance_notification',
+            importance: Importance.max,
           ),
-        );
-        // 수신된 메시지를 로그에 출력 (UI 업데이트 생략)
-        print("Foreground MESSAGE : ${message.notification?.body ?? ''}");
-      }
-    });
-
-    // 테마 모드 로드
-    _loadThemeMode();
+        ),
+      );
+      print("Foreground MESSAGE : ${notification.body ?? ''}");
+    }
   }
 
-  // 저장된 테마 모드를 로드하여 설정
-  void _loadThemeMode() async {
-    ThemeMode themeMode = await _themePreferences.getThemeMode();
-    setState(() {
-      _themeMode = themeMode;
-    });
+  // 백그라운드에서 알림 응답을 처리합니다.
+  @pragma('vm:entry-point')
+  static void _backgroundHandler(NotificationResponse details) {
+    // 백그라운드 알림 처리 로직
   }
 
-  // 테마 모드를 업데이트하여 저장
-  void _updateThemeMode(ThemeMode themeMode) {
-    setState(() {
-      _themeMode = themeMode;
-    });
-    _themePreferences.setThemeMode(themeMode);
-  }
-
-  // FCM 토큰을 데이터베이스에 저장
+  // FCM 토큰을 데이터베이스에 저장합니다.
   void saveTokenToDatabase(String token) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -104,15 +144,29 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
+  // 저장된 테마 모드를 로드합니다.
+  void _loadThemeMode() async {
+    ThemeMode themeMode = await _themePreferences.getThemeMode();
+    setState(() {
+      _themeMode = themeMode;
+    });
+  }
+
+  // 테마 모드를 업데이트하고 저장합니다.
+  void _updateThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+    _themePreferences.setThemeMode(themeMode);
+  }
+
   @override
   void dispose() {
-    // 앱이 종료될 때 오프라인 상태로 설정
     _onlineStatusService.setOffline();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // 앱 생명주기 상태 변경에 따라 온라인/오프라인 상태 업데이트
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -141,7 +195,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 
-  // 테마 데이터를 생성하고 Google Fonts를 적용
+  // 테마 데이터를 생성하고 Google Fonts를 적용합니다.
   ThemeData themeData(ThemeData theme) {
     return theme.copyWith(
       textTheme: GoogleFonts.sourceSansProTextTheme(theme.textTheme),
@@ -149,6 +203,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 }
 
+// 인증 상태에 따라 적절한 화면을 표시하는 래퍼 위젯입니다.
 class AuthWrapper extends StatelessWidget {
   final Function(ThemeMode) updateThemeMode;
 
@@ -160,17 +215,10 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // 인증 상태를 확인하는 동안 로딩 인디케이터 표시
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasData && snapshot.data!.emailVerified) {
-          // 사용자가 로그인되고 이메일이 인증된 경우 메인 화면으로 이동
           return MainScreen(updateThemeMode: updateThemeMode);
         } else {
-          // 사용자가 로그인되지 않은 경우 로그인 화면으로 이동
           return Login(updateThemeMode: updateThemeMode);
         }
       },
