@@ -92,36 +92,10 @@ class _ChatPageState extends State<ChatPage> {
                 _handleImageSelection();
               },
             ),
-            ListTile(
-              leading: Icon(Icons.attach_file),
-              title: Text('File'),
-              onTap: () {
-                Navigator.pop(context);
-                _handleFileSelection();
-              },
-            ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _handleFileSelection() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
-    if (result != null && result.files.single.path != null) {
-      final file = result.files.single;
-      final message = types.FileMessage(
-        author: _user,
-        createdAt: DateTime.now().millisecondsSinceEpoch,
-        id: const Uuid().v4(),
-        mimeType: lookupMimeType(file.path!),
-        name: file.name,
-        size: file.size,
-        uri: file.path!,
-        status: types.Status.sending,
-      );
-      await _addMessage(message);
-    }
   }
 
   Future<void> _handleImageSelection() async {
