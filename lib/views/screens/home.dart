@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:HolaTalk/views/screens/feeds/write_post.dart'; // WritePostPage를 임포트합니다.
-import 'package:HolaTalk/views/widgets/post_item.dart'; // PostItem을 임포트합니다.
+import 'package:HolaTalk/views/screens/feeds/write_post.dart';
+import 'package:HolaTalk/views/widgets/post_item.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Home extends StatefulWidget {
@@ -10,8 +10,44 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // 새로고침 함수
   Future<void> _refresh() async {
-    setState(() {}); // This will rebuild the widget and refresh the data
+    setState(() {}); // 위젯을 재빌드하여 데이터를 새로고침합니다.
+  }
+
+  // 모든 데이터를 로드하는 함수
+  Future<List<Map<String, dynamic>>> _loadAllData() async {
+    // 'moments' 컬렉션의 모든 문서를 가져옵니다.
+    QuerySnapshot momentSnapshot = await FirebaseFirestore.instance
+        .collection('moments')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    List<Map<String, dynamic>> allData = [];
+
+    // 각 moment에 대해 사용자 정보를 가져와 결합합니다.
+    for (var doc in momentSnapshot.docs) {
+      var postData = doc.data() as Map<String, dynamic>;
+      var userId = postData['userId'];
+
+      // 사용자 정보를 가져옵니다.
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      var userData = userSnapshot.data() as Map<String, dynamic>?;
+      var userProfileUrl = userData?['profileImageUrl'] ?? '';
+
+      // moment 데이터와 사용자 데이터를 결합합니다.
+      allData.add({
+        ...postData,
+        'id': doc.id,
+        'userProfileUrl': userProfileUrl,
+      });
+    }
+
+    return allData;
   }
 
   @override
@@ -29,68 +65,81 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('moments').orderBy('createdAt', descending: true).snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) {
-            return Center(
-              child: LoadingAnimationWidget.staggeredDotsWave(
-                color: isDarkMode ? Colors.white : Colors.blue,
-                size: 50,
-              ),
-            );
-          }
+      body: _buildBody(isDarkMode),
+      floatingActionButton: _buildFloatingActionButton(context),
+    );
+  }
 
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              itemCount: snapshot.data!.docs.length,
-              itemBuilder: (BuildContext context, int index) {
-                var post = snapshot.data!.docs[index];
+  // 본문 위젯 빌드
+  Widget _buildBody(bool isDarkMode) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _loadAllData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator(isDarkMode);
+        } else if (snapshot.hasError) {
+          return Center(child: Text("An error occurred: ${snapshot.error}"));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text("No data available."));
+        } else {
+          return _buildPostList(snapshot.data!);
+        }
+      },
+    );
+  }
 
-                return FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance.collection('users').doc(post['userId']).get(),
-                  builder: (context, userSnapshot) {
-                    if (!userSnapshot.hasData) {
-                      return SizedBox.shrink();
-                    }
+  // 로딩 인디케이터 위젯
+  Widget _buildLoadingIndicator(bool isDarkMode) {
+    return Center(
+      child: LoadingAnimationWidget.staggeredDotsWave(
+        color: isDarkMode ? Colors.white : Colors.blue,
+        size: 50,
+      ),
+    );
+  }
 
-                    var userProfileUrl = '';
-                    var userData = userSnapshot.data?.data() as Map<String, dynamic>?;
-                    if (userData != null && userData.containsKey('profileImageUrl')) {
-                      userProfileUrl = userData['profileImageUrl'] ?? '';
-                    }
-
-                    return PostItem(
-                      postId: post.id,
-                      userId: post['userId'],
-                      name: post['userName'],
-                      time: (post['createdAt'] as Timestamp).toDate(),
-                      img: post['imageUrl'] ?? '',
-                      content: post['content'],
-                      userProfileUrl: userProfileUrl,
-                      maxLines: 5, // maxLines를 5로 설정
-                    );
-                  },
-                );
-              },
-            ),
-          );
+  // 게시물 목록 위젯
+  Widget _buildPostList(List<Map<String, dynamic>> posts) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        itemCount: posts.length,
+        itemBuilder: (BuildContext context, int index) {
+          var post = posts[index];
+          return _buildPostItem(post);
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => WritePostPage()),
-          );
-        },
+    );
+  }
+
+  // 개별 게시물 위젯
+  Widget _buildPostItem(Map<String, dynamic> post) {
+    return PostItem(
+      postId: post['id'],
+      userId: post['userId'],
+      name: post['userName'],
+      time: (post['createdAt'] as Timestamp).toDate(),
+      img: post['imageUrl'] ?? '',
+      content: post['content'],
+      userProfileUrl: post['userProfileUrl'],
+      maxLines: 5, // 최대 5줄로 제한
+    );
+  }
+
+  // 플로팅 액션 버튼 위젯
+  Widget _buildFloatingActionButton(BuildContext context) {
+    return FloatingActionButton(
+      child: Icon(
+        Icons.add,
+        color: Colors.white,
       ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => WritePostPage()),
+        );
+      },
     );
   }
 }
