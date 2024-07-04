@@ -26,137 +26,112 @@ class _AccountState extends State<Account> {
     User? user = _auth.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Account'),
-      ),
+      appBar: AppBar(title: Text('Account')),
       body: ListView(
         children: [
-          FutureBuilder<DocumentSnapshot>(
-            future: _firestore.collection('users').doc(user?.uid).get(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('Loading...'),
-                );
-              }
-              if (snapshot.hasError) {
-                return ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('Error loading name'),
-                );
-              }
-              var userData = snapshot.data?.data() as Map<String, dynamic>?;
-              var userName = userData?['name'] ?? 'No name';
-              return ListTile(
-                leading: Icon(Icons.person),
-                title: Text('Name'),
-                subtitle: Text(userName),
-                onTap: () => _showChangeNameDialog(context, userName),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.email),
-            title: Text('Email'),
-            subtitle: Text(user?.email ?? 'No email'),
-          ),
-          ListTile(
-            leading: Icon(Icons.lock),
-            title: Text('Change Password'),
-            onTap: () async {
-              if (user?.email != null) {
-                await _auth.sendPasswordResetEmail(email: user!.email!);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Password reset email sent to ${user.email}.'),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('No email associated with this account.'),
-                  ),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('Sign out'),
-            onTap: () async {
-              // 로그아웃할 때 온라인 상태를 false로 설정
-              _onlineStatusService.setOffline();
-
-              await _auth.signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => Login(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
-                ), 
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.delete),
-            title: Text('Delete account'),
-            onTap: () async {
-              _showDeleteAccountDialog(context, user);
-            },
-          ),
+          _buildUserInfoTile(user),
+          _buildEmailTile(user),
+          _buildChangePasswordTile(user),
+          _buildSignOutTile(),
+          _buildDeleteAccountTile(user),
         ],
       ),
     );
   }
 
-  Future<void> _showChangeNameDialog(BuildContext context, String currentName) async {
-    TextEditingController nameController = TextEditingController(text: currentName);
-    User? user = _auth.currentUser;
-
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Change Name'),
-          content: TextField(
-            controller: nameController,
-            decoration: InputDecoration(labelText: 'New Name'),
-            maxLength: 30, // 최대 길이 제한
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Save'),
-              onPressed: () async {
-                String newName = nameController.text.trim();
-                String? validationResult = Validations.validateName(newName);
-                if (validationResult != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(validationResult)),
-                  );
-                  return;
-                }
-                if (newName.isNotEmpty && user != null) {
-                  await _firestore.collection('users').doc(user.uid).update({'name': newName});
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Name updated successfully')),
-                  );
-                  setState(() {}); // 화면을 갱신합니다.
-                }
-              },
-            ),
-          ],
+  // 사용자 정보 타일 위젯
+  Widget _buildUserInfoTile(User? user) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: _firestore.collection('users').doc(user?.uid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Loading...'),
+          );
+        }
+        if (snapshot.hasError) {
+          return ListTile(
+            leading: Icon(Icons.error),
+            title: Text('Error loading name'),
+          );
+        }
+        var userData = snapshot.data?.data() as Map<String, dynamic>?;
+        var userName = userData?['name'] ?? 'No name';
+        return ListTile(
+          leading: Icon(Icons.person),
+          title: Text('Name'),
+          subtitle: Text(userName),
+          onTap: () => _showChangeNameDialog(context, userName),
         );
       },
     );
   }
 
+  // 이메일 정보 타일 위젯
+  Widget _buildEmailTile(User? user) {
+    return ListTile(
+      leading: Icon(Icons.email),
+      title: Text('Email'),
+      subtitle: Text(user?.email ?? 'No email'),
+    );
+  }
+
+  // 비밀번호 변경 타일 위젯
+  Widget _buildChangePasswordTile(User? user) {
+    return ListTile(
+      leading: Icon(Icons.lock),
+      title: Text('Change Password'),
+      onTap: () => _sendPasswordResetEmail(user),
+    );
+  }
+
+  // 로그아웃 타일 위젯
+  Widget _buildSignOutTile() {
+    return ListTile(
+      leading: Icon(Icons.logout),
+      title: Text('Sign out'),
+      onTap: _signOut,
+    );
+  }
+
+  // 계정 삭제 타일 위젯
+  Widget _buildDeleteAccountTile(User? user) {
+    return ListTile(
+      leading: Icon(Icons.delete),
+      title: Text('Delete account'),
+      onTap: () => _showDeleteAccountDialog(context, user),
+    );
+  }
+
+  // 비밀번호 재설정 이메일 전송
+  Future<void> _sendPasswordResetEmail(User? user) async {
+    if (user?.email != null) {
+      await _auth.sendPasswordResetEmail(email: user!.email!);
+      _showSnackBar('Password reset email sent to ${user.email}.');
+    } else {
+      _showSnackBar('No email associated with this account.');
+    }
+  }
+
+  // 로그아웃 처리
+  Future<void> _signOut() async {
+    await _onlineStatusService.setOffline();
+    await _auth.signOut();
+    _navigateToLogin();
+  }
+
+  // 로그인 화면으로 이동
+  void _navigateToLogin() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => Login(updateThemeMode: widget.updateThemeMode),
+      ), 
+      (Route<dynamic> route) => false,
+    );
+  }
+
+  // 계정 삭제 대화상자 표시
   Future<void> _showDeleteAccountDialog(BuildContext context, User? user) async {
     TextEditingController emailController = TextEditingController();
 
@@ -185,38 +160,11 @@ class _AccountState extends State<Account> {
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: Text('Confirm'),
-              onPressed: () async {
-                if (user?.email == emailController.text.trim()) {
-                  try {
-                    await _deleteAccount(user);
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => Login(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
-                      ), 
-                      (Route<dynamic> route) => false,
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to delete account: $e'),
-                      ),
-                    );
-                    print(e);
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Email does not match. Please try again.'),
-                    ),
-                  );
-                }
-              },
+              onPressed: () => _confirmDeleteAccount(user, emailController.text.trim()),
             ),
           ],
         );
@@ -224,28 +172,96 @@ class _AccountState extends State<Account> {
     );
   }
 
+  // 계정 삭제 확인 및 처리
+  Future<void> _confirmDeleteAccount(User? user, String enteredEmail) async {
+    if (user?.email == enteredEmail) {
+      try {
+        await _deleteAccount(user);
+        _navigateToLogin();
+      } catch (e) {
+        _showSnackBar('Failed to delete account: $e');
+      }
+    } else {
+      _showSnackBar('Email does not match. Please try again.');
+    }
+  }
+
+  // 실제 계정 삭제 프로세스
   Future<void> _deleteAccount(User? user) async {
     if (user == null) throw Exception('User is null');
 
-    // Firestore 트랜잭션 시작
-    await _firestore.runTransaction((transaction) async {
-      // 1. Firestore에서 사용자 문서 삭제
-      transaction.delete(_firestore.collection('users').doc(user.uid));
-      
-      // 2. Firebase Storage에서 사용자 프로필 이미지 삭제 시도
-      try {
-        await _storage.ref('user_profile/${user.uid}.heic').delete();
-      } catch (e) {
-        if (e is! FirebaseException || e.code != 'object-not-found') {
-          throw e; // 'object-not-found'가 아닌 다른 예외는 다시 던집니다.
-        }
-      }
-      
-      // 3. 온라인 상태 서비스에서 사용자 상태 제거
-      _onlineStatusService.setOffline();
+    await _deleteUserDataFromFirestore(user.uid);
+    await _deleteProfileImage(user.uid);
+    _onlineStatusService.setOffline();
+    await user.delete();
+  }
 
-      // 4. Firebase Authentication에서 사용자 삭제
-      await user.delete();
+  // Firestore에서 사용자 데이터 삭제
+  Future<void> _deleteUserDataFromFirestore(String uid) async {
+    await _firestore.runTransaction((transaction) async {
+      transaction.delete(_firestore.collection('users').doc(uid));
+      transaction.delete(_firestore.collection('online_status').doc(uid));
     });
+  }
+
+  // Firebase Storage에서 프로필 이미지 삭제
+  Future<void> _deleteProfileImage(String uid) async {
+    try {
+      await _storage.ref('user_profile/$uid.heic').delete();
+    } catch (e) {
+      if (e is! FirebaseException || e.code != 'object-not-found') {
+        print('Failed to delete profile image: $e');
+      }
+    }
+  }
+
+  // 스낵바 표시 헬퍼 메서드
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // 이름 변경 대화상자 표시
+  Future<void> _showChangeNameDialog(BuildContext context, String currentName) async {
+    TextEditingController nameController = TextEditingController(text: currentName);
+    User? user = _auth.currentUser;
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Change Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(labelText: 'New Name'),
+            maxLength: 30,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () => _saveName(user, nameController.text.trim()),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 새 이름 저장
+  Future<void> _saveName(User? user, String newName) async {
+    String? validationResult = Validations.validateName(newName);
+    if (validationResult != null) {
+      _showSnackBar(validationResult);
+      return;
+    }
+    if (newName.isNotEmpty && user != null) {
+      await _firestore.collection('users').doc(user.uid).update({'name': newName});
+      Navigator.of(context).pop();
+      _showSnackBar('Name updated successfully');
+      setState(() {});
+    }
   }
 }
