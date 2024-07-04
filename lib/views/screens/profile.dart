@@ -12,7 +12,7 @@ import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart';
-import 'package:HolaTalk/views/screens/feeds/post_detail.dart'; // PostDetailPage를 임포트합니다
+import 'package:HolaTalk/views/screens/posts/post_detail.dart'; // PostDetailPage를 임포트합니다
 
 class Profile extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode;
