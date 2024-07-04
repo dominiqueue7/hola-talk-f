@@ -9,7 +9,7 @@ import 'package:HolaTalk/util/const.dart';
 import 'package:HolaTalk/util/theme_config.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 import 'package:HolaTalk/views/screens/main_screen.dart';
-import 'package:HolaTalk/util/online_status_service.dart';
+import 'package:HolaTalk/services/online_status_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 

@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 import 'package:HolaTalk/util/validations.dart';
-import 'package:HolaTalk/util/online_status_service.dart'; // 실제 경로로 변경
+import 'package:HolaTalk/services/online_status_service.dart'; // 실제 경로로 변경
 
 class Account extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode;
