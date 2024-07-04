@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:HolaTalk/views/screens/auth/login.dart';
 import 'package:HolaTalk/util/validations.dart';
 import 'package:HolaTalk/services/online_status_service.dart'; // 실제 경로로 변경
@@ -16,10 +17,12 @@ class Account extends StatefulWidget {
 }
 
 class _AccountState extends State<Account> {
+  // Firebase 인스턴스들
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final OnlineStatusService _onlineStatusService = OnlineStatusService(); // OnlineStatusService 인스턴스 추가
+  final OnlineStatusService _onlineStatusService = OnlineStatusService();
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +136,34 @@ class _AccountState extends State<Account> {
 
   // 계정 삭제 대화상자 표시
   Future<void> _showDeleteAccountDialog(BuildContext context, User? user) async {
-    TextEditingController emailController = TextEditingController();
+    if (user == null) {
+      _showSnackBar('User is not logged in.');
+      return;
+    }
+
+    // 사용자의 로그인 방식 확인
+    if (user.providerData.isEmpty) {
+      _showSnackBar('Unable to determine login method.');
+      return;
+    }
+
+    String providerId = user.providerData[0].providerId;
+
+    switch (providerId) {
+      case 'password':
+        _showPasswordReauthDialog(user);
+        break;
+      case 'google.com':
+        _showGoogleReauthDialog(user);
+        break;
+      default:
+        _showGenericReauthDialog(user);
+    }
+  }
+
+  // 비밀번호 재인증 대화상자
+  Future<void> _showPasswordReauthDialog(User user) async {
+    TextEditingController passwordController = TextEditingController();
 
     return showDialog<void>(
       context: context,
@@ -146,12 +176,13 @@ class _AccountState extends State<Account> {
               children: <Widget>[
                 Text('Are you sure you want to delete your account? This action cannot be undone.'),
                 SizedBox(height: 20),
-                Text('Please enter your email to confirm:'),
+                Text('Please enter your password to confirm:'),
                 TextField(
-                  controller: emailController,
+                  controller: passwordController,
+                  obscureText: true,
                   decoration: InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'Enter your email address',
+                    labelText: 'Password',
+                    hintText: 'Enter your password',
                   ),
                 ),
               ],
@@ -164,7 +195,7 @@ class _AccountState extends State<Account> {
             ),
             TextButton(
               child: Text('Confirm'),
-              onPressed: () => _confirmDeleteAccount(user, emailController.text.trim()),
+              onPressed: () => _confirmPasswordReauth(user, passwordController.text),
             ),
           ],
         );
@@ -172,35 +203,115 @@ class _AccountState extends State<Account> {
     );
   }
 
-  // 계정 삭제 확인 및 처리
-  Future<void> _confirmDeleteAccount(User? user, String enteredEmail) async {
-    if (user?.email == enteredEmail) {
-      try {
-        await _deleteAccount(user);
-        _navigateToLogin();
-      } catch (e) {
-        _showSnackBar('Failed to delete account: $e');
+  // Google 재인증 대화상자
+  Future<void> _showGoogleReauthDialog(User user) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Account'),
+          content: Text('To delete your account, you need to re-authenticate with Google. Press Confirm to proceed.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () => _confirmGoogleReauth(user),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 일반 재인증 대화상자 (다른 제공자용)
+  Future<void> _showGenericReauthDialog(User user) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Account'),
+          content: Text('To delete your account, you need to re-authenticate. Please log out and log back in, then try deleting your account again.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 비밀번호 재인증 확인
+  Future<void> _confirmPasswordReauth(User user, String password) async {
+    try {
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+      await _deleteAccount(user);
+      _navigateToLogin();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        _showSnackBar('Incorrect password. Please try again.');
+      } else {
+        _showSnackBar('Failed to delete account: ${e.message}');
       }
-    } else {
-      _showSnackBar('Email does not match. Please try again.');
+    } catch (e) {
+      _showSnackBar('An error occurred: $e');
     }
   }
 
-  // 실제 계정 삭제 프로세스
-  Future<void> _deleteAccount(User? user) async {
-    if (user == null) throw Exception('User is null');
+  // Google 재인증 확인
+  Future<void> _confirmGoogleReauth(User user) async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+      await user.reauthenticateWithCredential(credential);
+      await _deleteAccount(user);
+      _navigateToLogin();
+    } catch (e) {
+      _showSnackBar('Failed to re-authenticate: $e');
+    }
+  }
 
-    await _deleteUserDataFromFirestore(user.uid);
-    await _deleteProfileImage(user.uid);
-    _onlineStatusService.setOffline();
-    await user.delete();
+  // 계정 삭제 처리
+  Future<void> _deleteAccount(User user) async {
+    try {
+      // 1. Firebase Authentication에서 사용자 삭제
+      await user.delete();
+
+      // 2. 온라인 상태 업데이트
+      await _onlineStatusService.setOffline();
+
+      // 3. Firebase Storage에서 프로필 이미지 삭제
+      await _deleteProfileImage(user.uid);
+
+      // 4. Firestore Database에서 사용자 데이터 삭제
+      await _deleteUserDataFromFirestore(user.uid);
+
+
+      _showSnackBar('Your account has been successfully deleted.');
+      _navigateToLogin();
+    } catch (e) {
+      _showSnackBar('Failed to delete account: $e');
+    }
   }
 
   // Firestore에서 사용자 데이터 삭제
   Future<void> _deleteUserDataFromFirestore(String uid) async {
     await _firestore.runTransaction((transaction) async {
       transaction.delete(_firestore.collection('users').doc(uid));
-      transaction.delete(_firestore.collection('online_status').doc(uid));
     });
   }
 
@@ -209,6 +320,7 @@ class _AccountState extends State<Account> {
     try {
       await _storage.ref('user_profile/$uid.heic').delete();
     } catch (e) {
+      // 이미지가 없는 경우 무시
       if (e is! FirebaseException || e.code != 'object-not-found') {
         print('Failed to delete profile image: $e');
       }
