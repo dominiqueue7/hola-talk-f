@@ -105,6 +105,7 @@ class _LoginState extends State<Login> {
 
         // Firestore에 사용자 정보 저장
         await _firestore.collection('users').doc(userCredential.user?.uid).set({
+          'uid': userCredential.user?.uid,  // UID 저장 추가
           'name': name,
           'email': email,
           'country': country,
