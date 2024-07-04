@@ -194,23 +194,7 @@ class _AccountState extends State<Account> {
               onPressed: () async {
                 if (user?.email == emailController.text.trim()) {
                   try {
-                    // Firebase Storage에서 사용자 프로필 이미지 삭제 시도
-                    try {
-                      await _storage.ref('user_profile/${user?.uid}.heic').delete();
-                    } catch (e) {
-                      if (e is FirebaseException && e.code == 'object-not-found') {
-                        // 파일이 존재하지 않는 경우 무시
-                      } else {
-                        rethrow; // 다른 예외는 재던지기
-                      }
-                    }
-
-                    // Firestore에서 사용자 문서 삭제
-                    await _firestore.collection('users').doc(user?.uid).delete();
-
-                    // Firebase Authentication에서 사용자 삭제
-                    await user?.delete();
-
+                    await _deleteAccount(user);
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (context) => Login(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
@@ -223,6 +207,7 @@ class _AccountState extends State<Account> {
                         content: Text('Failed to delete account: $e'),
                       ),
                     );
+                    print(e);
                   }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -237,5 +222,30 @@ class _AccountState extends State<Account> {
         );
       },
     );
+  }
+
+  Future<void> _deleteAccount(User? user) async {
+    if (user == null) throw Exception('User is null');
+
+    // Firestore 트랜잭션 시작
+    await _firestore.runTransaction((transaction) async {
+      // 1. Firestore에서 사용자 문서 삭제
+      transaction.delete(_firestore.collection('users').doc(user.uid));
+      
+      // 2. Firebase Storage에서 사용자 프로필 이미지 삭제 시도
+      try {
+        await _storage.ref('user_profile/${user.uid}.heic').delete();
+      } catch (e) {
+        if (e is! FirebaseException || e.code != 'object-not-found') {
+          throw e; // 'object-not-found'가 아닌 다른 예외는 다시 던집니다.
+        }
+      }
+      
+      // 3. 온라인 상태 서비스에서 사용자 상태 제거
+      _onlineStatusService.setOffline();
+
+      // 4. Firebase Authentication에서 사용자 삭제
+      await user.delete();
+    });
   }
 }
