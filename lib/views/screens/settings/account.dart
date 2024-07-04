@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart'; // 새로 추가된 import
 import 'package:HolaTalk/views/screens/auth/login.dart';
 import 'package:HolaTalk/util/validations.dart';
 import 'package:HolaTalk/services/online_status_service.dart'; // 실제 경로로 변경
@@ -24,21 +25,40 @@ class _AccountState extends State<Account> {
   final OnlineStatusService _onlineStatusService = OnlineStatusService();
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  // 로딩 상태를 관리하기 위한 변수
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     User? user = _auth.currentUser;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final loadingColor = isDarkMode ? Colors.white : Colors.blue;
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Account')),
-      body: ListView(
-        children: [
-          _buildUserInfoTile(user),
-          _buildEmailTile(user),
-          _buildChangePasswordTile(user),
-          _buildSignOutTile(),
-          _buildDeleteAccountTile(user),
-        ],
-      ),
+
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(title: Text('Account')),
+          body: ListView(
+            children: [
+              _buildUserInfoTile(user),
+              _buildEmailTile(user),
+              _buildChangePasswordTile(user),
+              _buildSignOutTile(),
+              _buildDeleteAccountTile(user),
+            ],
+          ),
+        ),
+        // 로딩 오버레이
+        if (_isLoading)
+          Center(
+            child: LoadingAnimationWidget.staggeredDotsWave(
+              color: loadingColor,
+              size: 50,
+            ),
+          ),
+          
+      ],
     );
   }
 
@@ -195,7 +215,10 @@ class _AccountState extends State<Account> {
             ),
             TextButton(
               child: Text('Confirm'),
-              onPressed: () => _confirmPasswordReauth(user, passwordController.text),
+              onPressed: () {
+                Navigator.of(context).pop(); // 대화 상자 닫기
+                _confirmPasswordReauth(user, passwordController.text);
+              },
             ),
           ],
         );
@@ -219,7 +242,10 @@ class _AccountState extends State<Account> {
             ),
             TextButton(
               child: Text('Confirm'),
-              onPressed: () => _confirmGoogleReauth(user),
+              onPressed: () {
+                Navigator.of(context).pop(); // 대화 상자 닫기
+                _confirmGoogleReauth(user);
+              },
             ),
           ],
         );
@@ -249,6 +275,8 @@ class _AccountState extends State<Account> {
 
   // 비밀번호 재인증 확인
   Future<void> _confirmPasswordReauth(User user, String password) async {
+    // 로딩 상태 시작
+    setState(() => _isLoading = true);
     try {
       AuthCredential credential = EmailAuthProvider.credential(
         email: user.email!,
@@ -265,11 +293,16 @@ class _AccountState extends State<Account> {
       }
     } catch (e) {
       _showSnackBar('An error occurred: $e');
+    } finally {
+      // 로딩 상태 종료
+      setState(() => _isLoading = false);
     }
   }
 
   // Google 재인증 확인
   Future<void> _confirmGoogleReauth(User user) async {
+    // 로딩 상태 시작
+    setState(() => _isLoading = true);
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
@@ -282,6 +315,9 @@ class _AccountState extends State<Account> {
       _navigateToLogin();
     } catch (e) {
       _showSnackBar('Failed to re-authenticate: $e');
+    } finally {
+      // 로딩 상태 종료
+      setState(() => _isLoading = false);
     }
   }
 
