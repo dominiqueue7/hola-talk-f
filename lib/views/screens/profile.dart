@@ -12,22 +12,29 @@ import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/views/screens/settings/settings.dart';
-import 'package:HolaTalk/views/screens/posts/post_detail.dart'; // PostDetailPage를 임포트합니다
+import 'package:HolaTalk/views/screens/posts/post_detail.dart';
 
+// 프로필 위젯 클래스
 class Profile extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode;
 
-  Profile({required this.updateThemeMode});
+  const Profile({Key? key, required this.updateThemeMode}) : super(key: key);
 
   @override
   _ProfileState createState() => _ProfileState();
 }
 
 class _ProfileState extends State<Profile> {
-  static Random random = Random();
+  // 상수 정의
+  static const double _avatarRadius = 50.0;
+  static const double _editIconSize = 30.0;
+  
+  // Firebase 인스턴스 초기화
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // 상태 변수들
   String? _profileImageUrl;
   int _postCount = 0;
   int _followerCount = 0;
@@ -40,13 +47,15 @@ class _ProfileState extends State<Profile> {
     _loadProfileData();
   }
 
+  // 프로필 데이터 로드 메서드
   Future<void> _loadProfileData() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      String? imageUrl = await _getProfileImageUrl(user.uid);
-      int postCount = await _getPostCount(user.uid);
-      int followerCount = await _getFollowerCount(user.uid);
-      int followingCount = await _getFollowingCount(user.uid);
+      final imageUrl = await _getProfileImageUrl(user.uid);
+      final postCount = await _getPostCount(user.uid);
+      final followerCount = await _getFollowerCount(user.uid);
+      final followingCount = await _getFollowingCount(user.uid);
+      
       setState(() {
         _profileImageUrl = imageUrl;
         _postCount = postCount;
@@ -57,6 +66,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // 이미지 선택 및 업로드 메서드
   Future<void> _pickAndUploadImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -71,16 +81,21 @@ class _ProfileState extends State<Profile> {
           String? downloadUrl = await _uploadImage(compressedImage, user?.uid);
           if (downloadUrl != null) {
             await _updateProfileImageUrl(user?.uid, downloadUrl);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile image updated successfully.')));
-            _loadProfileData(); // 프로필 이미지 URL을 다시 불러옵니다.
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile image updated successfully.')),
+            );
+            _loadProfileData();
           }
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
         }
       }
     }
   }
 
+  // 이미지 압축 메서드
   Future<File?> _compressImage(File file) async {
     final dir = await getTemporaryDirectory();
     final targetPath = path.join(dir.absolute.path, "${path.basenameWithoutExtension(file.path)}.heic");
@@ -95,6 +110,7 @@ class _ProfileState extends State<Profile> {
     return result != null ? File(result.path) : null;
   }
 
+  // 이미지 업로드 메서드
   Future<String?> _uploadImage(File file, String? uid) async {
     if (uid != null) {
       final storageRef = _storage.ref().child('user_profile').child('$uid.heic');
@@ -104,12 +120,14 @@ class _ProfileState extends State<Profile> {
     return null;
   }
 
+  // 프로필 이미지 URL 업데이트 메서드
   Future<void> _updateProfileImageUrl(String? uid, String downloadUrl) async {
     if (uid != null) {
       await _firestore.collection('users').doc(uid).update({'profileImageUrl': downloadUrl});
     }
   }
 
+  // 프로필 이미지 URL 가져오기 메서드
   Future<String?> _getProfileImageUrl(String uid) async {
     try {
       final userDoc = await _firestore.collection('users').doc(uid).get();
@@ -120,6 +138,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // 게시물 수 가져오기 메서드
   Future<int> _getPostCount(String uid) async {
     try {
       final postQuery = await _firestore.collection('moments').where('userId', isEqualTo: uid).get();
@@ -130,6 +149,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // 팔로워 수 가져오기 메서드
   Future<int> _getFollowerCount(String uid) async {
     try {
       final followerQuery = await _firestore.collection('followers').doc(uid).collection('userFollowers').get();
@@ -140,6 +160,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // 팔로잉 수 가져오기 메서드
   Future<int> _getFollowingCount(String uid) async {
     try {
       final followingQuery = await _firestore.collection('following').doc(uid).collection('userFollowing').get();
@@ -150,6 +171,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // 사용자 이름 가져오기 메서드
   Future<String?> _getUserName(String? uid) async {
     if (uid != null) {
       try {
@@ -165,243 +187,263 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    User? user = _auth.currentUser;
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Profile"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AppSettings(updateThemeMode: widget.updateThemeMode), // updateThemeMode 전달
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? Center(
-              child: LoadingAnimationWidget.staggeredDotsWave(
-                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                size: 50,
-              ),
-            )
-          : SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(height: 60),
-                      Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.grey[200],
-                            child: _profileImageUrl == null
-                                ? Icon(
-                                    Icons.person,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  )
-                                : CachedNetworkImage(
-                                    imageUrl: _profileImageUrl!,
-                                    imageBuilder: (context, imageProvider) => CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: imageProvider,
-                                    ),
-                                    placeholder: (context, url) => LoadingAnimationWidget.waveDots(
-                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                                      size: 50,
-                                    ),
-                                    errorWidget: (context, url, error) => Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                _pickAndUploadImage();
-                              },
-                              child: Container(
-                                height: 30,
-                                width: 30,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey[200],
-                                ),
-                                child: Icon(
-                                  Icons.edit,
-                                  color: Colors.black,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      FutureBuilder<String?>(
-                        future: _getUserName(user?.uid),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return LoadingAnimationWidget.waveDots(
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                              size: 50,
-                            );
-                          } else if (snapshot.hasError || !snapshot.hasData) {
-                            return Text(
-                              "Unknown User",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                              ),
-                            );
-                          } else {
-                            return Text(
-                              snapshot.data!,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        "Status should be here",
-                        style: TextStyle(),
-                      ),
-                      SizedBox(height: 40),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 50),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            _buildCategory("Posts", _postCount),
-                            _buildCategory("Followers", _followerCount),
-                            _buildCategory("Following", _followingCount),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      StreamBuilder(
-                        stream: FirebaseFirestore.instance
-                            .collection('moments')
-                            .where('userId', isEqualTo: user?.uid)
-                            .orderBy('createdAt', descending: true)
-                            .snapshots(),
-                        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return LoadingAnimationWidget.waveDots(
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                              size: 50,
-                            );
-                          }
-                          if (!snapshot.hasData) {
-                            return Center(child: Text("No posts available."));
-                          }
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.all(5),
-                            itemCount: snapshot.data!.docs.length,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 200 / 200,
-                            ),
-                            itemBuilder: (BuildContext context, int index) {
-                              var post = snapshot.data!.docs[index];
-                              String imageUrl = post['imageUrl'] ?? '';
-                              String content = post['content'] ?? '';
+      appBar: _buildAppBar(),
+      body: _isLoading ? _buildLoadingIndicator() : _buildProfileBody(),
+    );
+  }
 
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PostDetailPage(
-                                        postId: post.id,
-                                        userId: post['userId'],
-                                        name: post['userName'],
-                                        time: (post['createdAt'] as Timestamp).toDate(),
-                                        img: imageUrl,
-                                        content: content,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.all(3.0),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Color(0xFFEEF7FF),
-                                    ),
-                                    child: imageUrl.isNotEmpty
-                                        ? CachedNetworkImage(
-                                            imageUrl: imageUrl,
-                                            placeholder: (context, url) => LoadingAnimationWidget.waveDots(
-                                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
-                                              size: 50,
-                                            ),
-                                            errorWidget: (context, url, error) => Icon(Icons.error),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Center(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                content.length > 50 ? '${content.substring(0, 50)}...' : content,
-                                                textAlign: TextAlign.center,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
+  // 앱바 빌드 메서드
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text("Profile"),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () => _navigateToSettings(),
+        ),
+      ],
+    );
+  }
+
+  // 설정 페이지로 이동하는 메서드
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AppSettings(updateThemeMode: widget.updateThemeMode),
+      ),
+    );
+  }
+
+  // 로딩 인디케이터 위젯
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: LoadingAnimationWidget.staggeredDotsWave(
+        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.blue,
+        size: 50,
+      ),
+    );
+  }
+
+  // 프로필 본문 빌드 메서드
+  Widget _buildProfileBody() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 60),
+              _buildProfileImage(),
+              const SizedBox(height: 10),
+              _buildUserName(),
+              const SizedBox(height: 10),
+              const Text("Status should be here"),
+              const SizedBox(height: 40),
+              _buildProfileStats(),
+              const SizedBox(height: 20),
+              _buildPostsGrid(),
+            ],
           ),
         ),
       ),
     );
   }
 
+  // 프로필 이미지 빌드 메서드
+  Widget _buildProfileImage() {
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: _avatarRadius,
+          backgroundColor: Colors.grey[200],
+          child: _profileImageUrl == null
+              ? const Icon(Icons.person, size: 50, color: Colors.grey)
+              : _buildCachedProfileImage(),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: _pickAndUploadImage,
+            child: Container(
+              height: _editIconSize,
+              width: _editIconSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[200],
+              ),
+              child: const Icon(Icons.edit, color: Colors.black, size: 18),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 캐시된 프로필 이미지 빌드 메서드
+  Widget _buildCachedProfileImage() {
+    return CachedNetworkImage(
+      imageUrl: _profileImageUrl!,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: _avatarRadius,
+        backgroundImage: imageProvider,
+      ),
+      placeholder: (context, url) => _buildLoadingIndicator(),
+      errorWidget: (context, url, error) => const Icon(
+        Icons.person,
+        size: 50,
+        color: Colors.grey,
+      ),
+    );
+  }
+
+  // 사용자 이름 빌드 메서드
+  Widget _buildUserName() {
+    return FutureBuilder<String?>(
+      future: _getUserName(_auth.currentUser?.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        } else if (snapshot.hasError || !snapshot.hasData) {
+          return const Text(
+            "Unknown User",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          );
+        } else {
+          return Text(
+            snapshot.data!,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          );
+        }
+      },
+    );
+  }
+
+  // 프로필 통계 빌드 메서드
+  Widget _buildProfileStats() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 50),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          _buildCategory("Posts", _postCount),
+          _buildCategory("Followers", _followerCount),
+          _buildCategory("Following", _followingCount),
+        ],
+      ),
+    );
+  }
+
+  // 카테고리 빌드 메서드
   Widget _buildCategory(String title, int count) {
     return Column(
       children: <Widget>[
         Text(
           count.toString(),
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
-        SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(),
-        ),
+        const SizedBox(height: 4),
+        Text(title),
       ],
+    );
+  }
+
+  // 게시물 그리드 빌드 메서드
+  Widget _buildPostsGrid() {
+    return StreamBuilder(
+      stream: FirebaseFirestore.instance
+          .collection('moments')
+          .where('userId', isEqualTo: _auth.currentUser?.uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: Text("No posts available."));
+        }
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(5),
+          itemCount: snapshot.data!.docs.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 1,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return _buildPostItem(snapshot.data!.docs[index]);
+          },
+        );
+      },
+    );
+  }
+
+  // 게시물 아이템 빌드 메서드
+  Widget _buildPostItem(QueryDocumentSnapshot post) {
+    String imageUrl = post['imageUrl'] ?? '';
+    String content = post['content'] ?? '';
+
+    return GestureDetector(
+      onTap: () => _navigateToPostDetail(post),
+      child: Padding(
+        padding: const EdgeInsets.all(3.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : const Color(0xFFEEF7FF),
+          ),
+          child: imageUrl.isNotEmpty
+              ? _buildPostImage(imageUrl)
+              : _buildPostContent(content),
+        ),
+      ),
+    );
+  }
+
+  // 이 메서드는 게시물의 이미지를 표시하는 위젯을 생성합니다.
+  Widget _buildPostImage(String imageUrl) {
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      placeholder: (context, url) => _buildLoadingIndicator(),
+      errorWidget: (context, url, error) => const Icon(Icons.error),
+      fit: BoxFit.cover,
+    );
+  }
+
+  // 이 메서드는 게시물의 텍스트 내용을 표시하는 위젯을 생성합니다.
+  Widget _buildPostContent(String content) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          content.length > 50 ? '${content.substring(0, 50)}...' : content,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+  
+  // 게시물 상세 페이지로 이동
+  void _navigateToPostDetail(QueryDocumentSnapshot post) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PostDetailPage(
+          postId: post.id,
+          userId: post['userId'],
+          name: post['userName'],
+          time: (post['createdAt'] as Timestamp).toDate(),
+          img: post['imageUrl'] ?? '',
+          content: post['content'] ?? '',
+        ),
+      ),
     );
   }
 }
