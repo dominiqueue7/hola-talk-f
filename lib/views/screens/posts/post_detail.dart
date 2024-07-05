@@ -1,3 +1,4 @@
+import 'package:HolaTalk/views/widgets/delete_post.dart';
 import 'package:HolaTalk/views/widgets/format_time.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -169,7 +170,19 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   ),
                 );
                 if (shouldDelete == true) {
-                  _deletePost();
+                  setState(() {
+                    _isDeleting = true;
+                  });
+                  
+                  bool deleted = await DeletePost.deletePost(context, widget.postId);
+                  
+                  if (deleted) {
+                    Navigator.pop(context, 'deleted'); // Return to previous screen with 'deleted' status
+                  } else {
+                    setState(() {
+                      _isDeleting = false;
+                    });
+                  }
                 }
               },
             ),
