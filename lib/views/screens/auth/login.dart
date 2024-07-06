@@ -14,6 +14,7 @@ import 'package:HolaTalk/views/widgets/custom_text_field.dart';
 import 'package:HolaTalk/util/extensions.dart';
 import 'package:HolaTalk/util/country_data.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:HolaTalk/services/init_fcm.dart';
 
 class Login extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode; // updateThemeMode 매개변수 추가
@@ -33,7 +34,8 @@ class _LoginState extends State<Login> {
   FocusNode emailFN = FocusNode();
   FocusNode passFN = FocusNode();
   FormMode formMode = FormMode.LOGIN;
-
+  
+  final FCMService _fcmService = FCMService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -56,6 +58,7 @@ class _LoginState extends State<Login> {
           await _firestore.collection('users').doc(userCredential.user?.uid).update({
             'lastLogin': FieldValue.serverTimestamp(),
           });
+          await _fcmService.initialize();
 
           Navigate.pushPageReplacement(
             context,
@@ -102,6 +105,10 @@ class _LoginState extends State<Login> {
           email: email,
           password: password,
         );
+
+        // FCM 초기화
+        await _fcmService.initialize();
+
 
         // Firestore에 사용자 정보 저장
         await _firestore.collection('users').doc(userCredential.user?.uid).set({

@@ -12,6 +12,7 @@ import 'package:HolaTalk/views/screens/main_screen.dart';
 import 'package:HolaTalk/services/online_status_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
+import 'package:HolaTalk/services/init_fcm.dart';
 
 // Flutter 로컬 알림 플러그인을 초기화합니다.
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -27,6 +28,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late FirebaseAnalyticsObserver _observer;
   ThemeMode _themeMode = ThemeMode.system;
   final ThemePreferences _themePreferences = ThemePreferences();
+  final FCMService _fcmService = FCMService();
+
 
   @override
   void initState() {
@@ -39,7 +42,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _requestNotificationPermissions();
     _handleInitialMessage();
     _loadThemeMode();
+    _setupAuthListener();
+    _initializeApp();
   }
+
+  Future<void> _initializeApp() async {
+    await _fcmService.initialize();
+    _setupAuthListener();
+    // ... 기타 초기화 코드
+  }
+
+
+  // Firebase 인증 상태 변경을 감지하는 리스너 설정
+  void _setupAuthListener() {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null && user.emailVerified) {
+        // 사용자가 인증되었을 때 FCM 토큰 초기화
+        _fcmService.initialize();
+      }
+    });
+  }
+
 
   // Firebase Analytics를 초기화합니다.
   void _initializeFirebaseAnalytics() {
@@ -55,6 +78,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     });
 
+    // 토큰 갱신 시 자동으로 데이터베이스 업데이트
     FirebaseMessaging.instance.onTokenRefresh.listen(saveTokenToDatabase);
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -137,7 +161,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   // FCM 토큰을 데이터베이스에 저장합니다.
   void saveTokenToDatabase(String token) async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    if (user != null && user.emailVerified) {
+      // 이메일이 인증된 사용자만 토큰 저장
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
         'fcmToken': token,
       });
