@@ -107,39 +107,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
-  // 게시물 삭제 함수
-  Future<void> _deletePost() async {
-    setState(() {
-      _isDeleting = true;
-    });
-
-    try {
-      // 트랜잭션을 사용하여 게시물과 관련 댓글을 동시에 삭제합니다
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // 게시물 삭제
-        transaction.delete(FirebaseFirestore.instance.collection('moments').doc(widget.postId));
-
-        // 관련 댓글 삭제
-        final commentSnapshots = await FirebaseFirestore.instance
-            .collection('comments')
-            .where('postId', isEqualTo: widget.postId)
-            .get();
-        
-        for (var doc in commentSnapshots.docs) {
-          transaction.delete(doc.reference);
-        }
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post deleted successfully.')));
-      Navigator.pop(context, 'deleted'); // '삭제됨' 상태와 함께 이전 화면으로 돌아갑니다
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete post: $e')));
-    } finally {
-      setState(() {
-        _isDeleting = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
