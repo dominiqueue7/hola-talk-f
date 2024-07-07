@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/util/animations.dart';
 import 'package:HolaTalk/util/const.dart';
 import 'package:HolaTalk/util/enum.dart';
 import 'package:HolaTalk/util/router.dart';
 import 'package:HolaTalk/util/validations.dart';
+import 'package:HolaTalk/util/extensions.dart';
+import 'package:HolaTalk/util/country_data.dart';
 import 'package:HolaTalk/views/main_screen.dart';
 import 'package:HolaTalk/widgets/custom_button.dart';
 import 'package:HolaTalk/widgets/custom_text_field.dart';
-import 'package:HolaTalk/util/extensions.dart';
-import 'package:HolaTalk/util/country_data.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:HolaTalk/services/init_fcm.dart';
 
 class Login extends StatefulWidget {
