@@ -1,5 +1,5 @@
-import 'package:HolaTalk/views/widgets/delete_post.dart';
-import 'package:HolaTalk/views/widgets/format_time.dart';
+import 'package:HolaTalk/widgets/delete_post.dart';
+import 'package:HolaTalk/widgets/format_time.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

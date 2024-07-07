@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/views/widgets/icon_badge.dart';
+import 'package:HolaTalk/widgets/icon_badge.dart';
 import 'package:HolaTalk/views/screens/chat/chats.dart';
 import 'package:HolaTalk/views/screens/friends.dart';
 import 'package:HolaTalk/views/screens/home.dart';
