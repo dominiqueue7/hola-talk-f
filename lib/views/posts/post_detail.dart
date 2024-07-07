@@ -1,12 +1,11 @@
 import 'package:HolaTalk/widgets/delete_post.dart';
 import 'package:HolaTalk/widgets/format_time.dart';
+import 'package:HolaTalk/widgets/show_user_modal.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:HolaTalk/views/user_detail.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -85,47 +84,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
       print('Failed to load profile image for user $userId: $e');
       return null;
     }
-  }
-
-  // 사용자 프로필 모달 표시
-  void _showUserProfile(String userId) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(top: 8),
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                ),
-                Expanded(
-                  child: ProfilePage(
-                    userId: userId,
-                    scrollController: scrollController,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -219,7 +177,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget _buildAuthorInfo() {
     return ListTile(
       leading: GestureDetector(
-        onTap: () => _showUserProfile(widget.userId),
+        onTap: () => showUserProfile(context, widget.userId),
         child: CircleAvatar(
           backgroundColor: Colors.grey[200],
           child: userProfileUrl != null
@@ -303,7 +261,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 String? imageUrl = snapshot.data;
                 return ListTile(
                   leading: GestureDetector(
-                    onTap: () => _showUserProfile(commentUserId),
+                    onTap: () => showUserProfile(context, commentUserId),
                     child: CircleAvatar(
                       backgroundColor: Colors.grey[200],
                       child: imageUrl != null
