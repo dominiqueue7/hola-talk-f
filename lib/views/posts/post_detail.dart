@@ -92,15 +92,36 @@ class _PostDetailPageState extends State<PostDetailPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 1.0,
-        minChildSize: 0.8,
-        maxChildSize: 1.0,
-        expand: false,
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
         builder: (context, scrollController) {
-          return ProfilePage(
-            userId: userId,
-            scrollController: scrollController,
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(top: 8),
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2.5),
+                  ),
+                ),
+                Expanded(
+                  child: ProfilePage(
+                    userId: userId,
+                    scrollController: scrollController,
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
