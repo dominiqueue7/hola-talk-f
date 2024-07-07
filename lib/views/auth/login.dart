@@ -15,6 +15,7 @@ import 'package:HolaTalk/views/main_screen.dart';
 import 'package:HolaTalk/widgets/custom_button.dart';
 import 'package:HolaTalk/widgets/custom_text_field.dart';
 import 'package:HolaTalk/services/init_fcm.dart';
+import 'package:HolaTalk/views/auth/email_verify_dialog.dart';
 
 class Login extends StatefulWidget {
   final Function(ThemeMode) updateThemeMode; // updateThemeMode 매개변수 추가
@@ -66,7 +67,7 @@ class _LoginState extends State<Login> {
           );
         } else {
           // 이메일 인증이 안 되어 있는 경우
-          _showVerificationDialog(userCredential.user);
+          VerificationDialog.show(context, userCredential.user);
         }
       } on FirebaseAuthException catch (e) {
         showInSnackBar(e.message ?? 'Login failed');
@@ -154,31 +155,6 @@ class _LoginState extends State<Login> {
   void showInSnackBar(String value) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
-  }
-
-  void _showVerificationDialog(User? user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Email not verified'),
-        content: Text('Your email is not verified. Would you like to resend the verification email?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await user?.sendEmailVerification();
-              await _auth.signOut();
-              showInSnackBar('Verification email has been resent. Please check your email.');
-            },
-            child: Text('Resend'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
