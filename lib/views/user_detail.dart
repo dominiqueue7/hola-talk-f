@@ -6,8 +6,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:HolaTalk/widgets/animations/animated_button.dart';
-import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
-import 'package:HolaTalk/views/screens/posts/post_detail.dart'; // PostDetailPage를 임포트합니다.
+import 'package:HolaTalk/views/chat/chat_screen.dart';
+import 'package:HolaTalk/views/posts/post_detail.dart'; // PostDetailPage를 임포트합니다.
 
 class ProfilePage extends StatefulWidget {
   final String userId;

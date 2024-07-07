@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:HolaTalk/widgets/icon_badge.dart';
-import 'package:HolaTalk/views/screens/chat/chats.dart';
-import 'package:HolaTalk/views/screens/friends.dart';
-import 'package:HolaTalk/views/screens/home.dart';
-import 'package:HolaTalk/views/screens/notifications.dart';
-import 'package:HolaTalk/views/screens/profile.dart';
+import 'package:HolaTalk/views/chat/chats.dart';
+import 'package:HolaTalk/views/friends.dart';
+import 'package:HolaTalk/views/home.dart';
+import 'package:HolaTalk/views/notifications.dart';
+import 'package:HolaTalk/views/profile.dart';
 
 // 메인 화면 위젯 클래스
 class MainScreen extends StatefulWidget {

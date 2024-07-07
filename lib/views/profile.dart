@@ -11,8 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:HolaTalk/views/screens/settings/settings.dart';
-import 'package:HolaTalk/views/screens/posts/post_detail.dart';
+import 'package:HolaTalk/views/settings/settings.dart';
+import 'package:HolaTalk/views/posts/post_detail.dart';
 
 // 프로필 위젯 클래스
 class Profile extends StatefulWidget {

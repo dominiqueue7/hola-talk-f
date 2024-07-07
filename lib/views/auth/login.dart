@@ -8,7 +8,7 @@ import 'package:HolaTalk/util/const.dart';
 import 'package:HolaTalk/util/enum.dart';
 import 'package:HolaTalk/util/router.dart';
 import 'package:HolaTalk/util/validations.dart';
-import 'package:HolaTalk/views/screens/main_screen.dart';
+import 'package:HolaTalk/views/main_screen.dart';
 import 'package:HolaTalk/widgets/custom_button.dart';
 import 'package:HolaTalk/widgets/custom_text_field.dart';
 import 'package:HolaTalk/util/extensions.dart';

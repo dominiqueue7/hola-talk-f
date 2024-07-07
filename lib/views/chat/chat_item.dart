@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/views/screens/chat/chat_screen.dart';
+import 'package:HolaTalk/views/chat/chat_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// ChatItem 위젯: 채팅 목록의 각 항목을 표시하는 위젯

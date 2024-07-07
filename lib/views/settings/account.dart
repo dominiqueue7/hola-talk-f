@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart'; // 새로 추가된 import
-import 'package:HolaTalk/views/screens/auth/login.dart';
+import 'package:HolaTalk/views/auth/login.dart';
 import 'package:HolaTalk/util/validations.dart';
 import 'package:HolaTalk/services/online_status_service.dart'; // 실제 경로로 변경
 

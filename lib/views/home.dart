@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:HolaTalk/views/screens/posts/write_post.dart';
-import 'package:HolaTalk/views/screens/posts/post_item.dart';
+import 'package:HolaTalk/views/posts/write_post.dart';
+import 'package:HolaTalk/views/posts/post_item.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Home extends StatefulWidget {

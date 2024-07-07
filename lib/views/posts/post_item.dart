@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:HolaTalk/views/screens/posts/post_detail.dart';
+import 'package:HolaTalk/views/posts/post_detail.dart';
 
 class PostItem extends StatelessWidget {
   // 클래스 속성 정의

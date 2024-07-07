@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/views/screens/settings/account.dart';
-import 'package:HolaTalk/views/screens/settings/appearance.dart'; // 새로 추가된 임포트
+import 'package:HolaTalk/views/settings/account.dart';
+import 'package:HolaTalk/views/settings/appearance.dart'; // 새로 추가된 임포트
 
 class AppSettings extends StatelessWidget {
   final Function(ThemeMode) updateThemeMode;

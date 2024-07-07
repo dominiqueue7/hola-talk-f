@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:HolaTalk/views/screens/user_detail.dart';
+import 'package:HolaTalk/views/user_detail.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class PostDetailPage extends StatefulWidget {
