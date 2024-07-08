@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:HolaTalk/widgets/icon_badge.dart';
 import 'package:HolaTalk/views/chat/chats.dart';
 import 'package:HolaTalk/views/friends.dart';
 import 'package:HolaTalk/views/home.dart';
-import 'package:HolaTalk/views/notifications.dart';
+import 'package:HolaTalk/views/voice_chat.dart';
 import 'package:HolaTalk/views/profile.dart';
 
 // 메인 화면 위젯 클래스
@@ -55,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
           Chats(),
           Friends(),
           Home(),
-          Notifications(),
+          VoiceChatRoomList(),
           Profile(updateThemeMode: widget.updateThemeMode), // 테마 모드 업데이트 함수 전달
         ],
       ),
@@ -83,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
               label: '',
             ),
             BottomNavigationBarItem(
-              icon: IconBadge(icon: Icons.notifications),
+              icon: Icon(Icons.mic),
               label: '',
             ),
             BottomNavigationBarItem(
