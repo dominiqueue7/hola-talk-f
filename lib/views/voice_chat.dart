@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:HolaTalk/views/voice/create_chat_room.dart';
+import 'package:HolaTalk/views/voice/voice_chat_room.dart';
 
 // 음성 채팅방 목록을 표시하는 StatelessWidget
 class VoiceChatRoomList extends StatelessWidget {
@@ -43,7 +45,12 @@ class VoiceChatRoomList extends StatelessWidget {
       // 새 채팅방 생성 버튼
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () => _createNewRoom(context),
+        onPressed: () async {
+          String? newRoomId = await createNewRoom(context);
+          if (newRoomId != null) {
+            _joinRoom(context, newRoomId);
+          }
+        },
       ),
     );
   }
@@ -52,55 +59,30 @@ class VoiceChatRoomList extends StatelessWidget {
   Widget _buildRoomListTile(BuildContext context, DocumentSnapshot room) {
     return ListTile(
       title: Text(room['name']),
-      subtitle: Text('Participants: ${room['participants'].length}'),
+      subtitle: Text('Participants: ${(room['participants'] as List).length}'),
       trailing: Icon(Icons.chevron_right),
       onTap: () => _joinRoom(context, room.id),
     );
   }
 
-  // 새 채팅방 생성 다이얼로그 표시
-  void _createNewRoom(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String roomName = '';
-        return AlertDialog(
-          title: Text('Create New Chat Room'),
-          content: TextField(
-            onChanged: (value) => roomName = value,
-            decoration: InputDecoration(hintText: "Enter room name"),
+  void _joinRoom(BuildContext context, String roomId) async {
+    // 방 정보를 가져옵니다.
+    DocumentSnapshot roomSnapshot = await _firestore.collection('voiceChatRooms').doc(roomId).get();
+    
+    if (roomSnapshot.exists) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VoiceChatRoom(
+            roomId: roomId,
+            roomName: roomSnapshot['name'],
           ),
-          actions: [
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            TextButton(
-              child: Text('Create'),
-              onPressed: () async {
-                if (roomName.isNotEmpty) {
-                  // 새 채팅방 정보를 Firestore에 추가
-                  await _firestore.collection('voiceChatRooms').add({
-                    'name': roomName,
-                    'createdBy': _auth.currentUser!.uid,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'participants': [],
-                  });
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 채팅방 참가 함수 (아직 구현되지 않음)
-  void _joinRoom(BuildContext context, String roomId) {
-    // TODO: 채팅방 참가 로직 구현
-    // 예: 음성 채팅 페이지로 네비게이션
-    print('Joining room: $roomId');
-    // Navigator.push(context, MaterialPageRoute(builder: (context) => VoiceChatRoom(roomId: roomId)));
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('This room no longer exists.')),
+      );
+    }
   }
 }

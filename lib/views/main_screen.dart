@@ -17,7 +17,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late PageController _pageController;
-  int _page = 2; // 초기 페이지 인덱스 설정 (Home 화면)
+  int _page = 3; // 초기 페이지 인덱스 설정 (Home 화면)
 
   @override
   void initState() {
