@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ParticipantSlots extends StatelessWidget {
   final String roomId;
@@ -60,7 +61,7 @@ class ParticipantSlots extends StatelessWidget {
         return Column(
           children: [
             Stack(
-              alignment: Alignment.bottomRight,
+              alignment: Alignment.center,
               children: [
                 CircleAvatar(
                   radius: 30,
@@ -73,7 +74,15 @@ class ParticipantSlots extends StatelessWidget {
                       : null,
                 ),
                 if (isHost)
-                  Icon(Icons.star, color: Color.fromARGB(255, 254, 233, 48), size: 20),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: SvgPicture.asset(
+                      'assets/svgs/key.svg',
+                      width: 20,
+                      height: 20,
+                    ),
+                  ),
               ],
             ),
             SizedBox(height: 1),
