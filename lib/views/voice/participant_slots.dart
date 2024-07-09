@@ -4,9 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class ParticipantSlots extends StatelessWidget {
   final String roomId;
-  final int maxParticipants = 20;
+  final String hostId;
+  final int maxParticipants = 12;
 
-  ParticipantSlots({required this.roomId});
+  ParticipantSlots({required this.roomId, required this.hostId});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,9 @@ class ParticipantSlots extends StatelessWidget {
           ),
           itemCount: maxParticipants,
           itemBuilder: (context, index) {
-            if (index < participants.length) {
+            if (index == 0) {
+              return _buildParticipantSlot(hostId, isHost: true);
+            } else if (index < participants.length) {
               return _buildParticipantSlot(participants[index]);
             } else {
               return _buildEmptySlot();
@@ -37,7 +40,7 @@ class ParticipantSlots extends StatelessWidget {
     );
   }
 
-  Widget _buildParticipantSlot(String userId) {
+  Widget _buildParticipantSlot(String userId, {bool isHost = false}) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
       builder: (context, snapshot) {
@@ -56,17 +59,24 @@ class ParticipantSlots extends StatelessWidget {
 
         return Column(
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.grey[200],
-              backgroundImage: (profileImageUrl != null && profileImageUrl.isNotEmpty) 
-                  ? CachedNetworkImageProvider(profileImageUrl) 
-                  : null,
-              child: (profileImageUrl == null || profileImageUrl.isEmpty) 
-                  ? Icon(Icons.person, color: Colors.grey)
-                  : null,
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: (profileImageUrl != null && profileImageUrl.isNotEmpty) 
+                      ? CachedNetworkImageProvider(profileImageUrl) 
+                      : null,
+                  child: (profileImageUrl == null || profileImageUrl.isEmpty) 
+                      ? Icon(Icons.person, color: Colors.grey)
+                      : null,
+                ),
+                if (isHost)
+                  Icon(Icons.star, color: Color.fromARGB(255, 254, 233, 48), size: 20),
+              ],
             ),
-            SizedBox(height: 4),
+            SizedBox(height: 1),
             Text(name, overflow: TextOverflow.ellipsis),
           ],
         );

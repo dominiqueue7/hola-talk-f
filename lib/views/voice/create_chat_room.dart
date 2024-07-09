@@ -28,12 +28,14 @@ Future<String?> createNewRoom(BuildContext context) async {
             child: Text('Create'),
             onPressed: () async {
               if (roomName.isNotEmpty) {
+                final currentUserId = _auth.currentUser!.uid;
                 // 새 채팅방 정보를 Firestore에 추가
                 DocumentReference docRef = await _firestore.collection('voiceChatRooms').add({
                   'name': roomName,
-                  'createdBy': _auth.currentUser!.uid,
+                  'hostId': currentUserId, // 방장 ID 추가
+                  'createdBy': currentUserId,
                   'createdAt': FieldValue.serverTimestamp(),
-                  'participants': [_auth.currentUser!.uid], // 방 생성자를 참가자 목록에 추가
+                  'participants': [currentUserId], // 방 생성자를 참가자 목록에 추가
                 });
                 createdRoomId = docRef.id;
                 Navigator.pop(context);
