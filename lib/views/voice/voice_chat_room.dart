@@ -4,18 +4,38 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'participant_slots.dart';
 import 'text_chat.dart';
 
-class VoiceChatRoom extends StatelessWidget {
+class VoiceChatRoom extends StatefulWidget {
   final String roomId;
   final String roomName;
 
   VoiceChatRoom({required this.roomId, required this.roomName});
 
   @override
-  Widget build(BuildContext context) {
-    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  _VoiceChatRoomState createState() => _VoiceChatRoomState();
+}
 
+class _VoiceChatRoomState extends State<VoiceChatRoom> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late String currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    currentUserId = _auth.currentUser!.uid;
+    _joinRoom();
+  }
+
+  Future<void> _joinRoom() async {
+    await _firestore.collection('voiceChatRooms').doc(widget.roomId).update({
+      'participants': FieldValue.arrayUnion([currentUserId])
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('voiceChatRooms').doc(roomId).snapshots(),
+      stream: _firestore.collection('voiceChatRooms').doc(widget.roomId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
 
@@ -24,7 +44,7 @@ class VoiceChatRoom extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(roomName),
+            title: Text(widget.roomName),
             actions: [
               IconButton(
                 icon: Icon(Icons.exit_to_app),
@@ -36,11 +56,11 @@ class VoiceChatRoom extends StatelessWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: ParticipantSlots(roomId: roomId, hostId: roomData['hostId']),
+                child: ParticipantSlots(roomId: widget.roomId, hostId: roomData['hostId']),
               ),
               Expanded(
                 flex: 3,
-                child: TextChat(roomId: roomId),
+                child: TextChat(roomId: widget.roomId),
               ),
             ],
           ),
@@ -80,14 +100,19 @@ class VoiceChatRoom extends StatelessWidget {
   }
 
   Future<void> _closeRoom() async {
-    // Delete the room from Firestore
-    await FirebaseFirestore.instance.collection('voiceChatRooms').doc(roomId).delete();
+    // Firestore에서 방 삭제
+    await _firestore.collection('voiceChatRooms').doc(widget.roomId).delete();
   }
 
   Future<void> _removeParticipant() async {
-    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('voiceChatRooms').doc(roomId).update({
+    await _firestore.collection('voiceChatRooms').doc(widget.roomId).update({
       'participants': FieldValue.arrayRemove([currentUserId])
     });
+  }
+
+  @override
+  void dispose() {
+    _removeParticipant(); // 화면을 나갈 때 참가자 목록에서 제거
+    super.dispose();
   }
 }
