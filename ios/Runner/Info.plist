@@ -30,6 +30,8 @@
 	<string>We need access to your photo library to save your profile picture.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to update your profile picture.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This application needs access to your microphone for voice chat</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
